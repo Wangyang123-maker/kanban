@@ -1,15 +1,15 @@
 {
-  "updated": "2026-07-22 11:34",
+  "updated": "2026-07-22 11:38",
   "links": [
     {
-      "name": "线路一（固定地址·当前离线）",
+      "name": "线路一（固定地址·推荐收藏）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     },
     {
       "name": "线路二（备用）",
       "url": "https://boxing-gps-boom-demonstrated.trycloudflare.com",
-      "primary": true
+      "primary": false
     }
   ]
 }
