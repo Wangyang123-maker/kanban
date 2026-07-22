@@ -16,6 +16,7 @@
   .dot{width:9px;height:9px;border-radius:50%;background:#8a97ab;flex:none}
   .dot.on{background:#2dd4bf;box-shadow:0 0 8px #2dd4bf}
   .dot.off{background:#f0524f}
+  .stxt{margin-left:auto;font-size:12px;color:#55637a}
   .url{font-size:12px;color:#7c8aa0;word-break:break-all;margin-bottom:14px}
   .row{display:flex;gap:10px}
   a.btn,button.btn{flex:1;text-align:center;text-decoration:none;border:none;cursor:pointer;
@@ -48,7 +49,7 @@ async function main(){
   $('#upd').textContent='地址更新于 '+d.updated;
   const cards=d.links.map((l,i)=>`
     <div class="card">
-      <div class="st"><span class="dot" id="dot${i}"></span><b>${l.name}</b></div>
+      <div class="st"><span class="dot" id="dot${i}"></span><b>${l.name}</b><span class="stxt" id="stxt${i}">检测中…</span></div>
       <div class="url">${l.url}</div>
       <div class="row">
         <a class="btn open" href="${l.url}">打开看板</a>
@@ -61,23 +62,23 @@ async function main(){
     catch(e){ prompt('长按复制：',b.dataset.u); }
     setTimeout(()=>b.textContent='复制地址',1500);
   });
-  // 逐个探测可用性，第一个通的自动跳转
+  // 逐个探测可用性（no-cors：只看通不通，跨域也能探），第一个通的自动跳转
   let jumped=false;
   d.links.forEach(async(l,i)=>{
+    const t0=Date.now();
     try{
       const ctl=new AbortController();
       setTimeout(()=>ctl.abort(),8000);
-      const r=await fetch(l.url+'/data.json?t='+Date.now(),{signal:ctl.signal,cache:'no-store'});
-      if(r.ok){
-        $('#dot'+i).classList.add('on');
-        if(!jumped && l.primary){
-          jumped=true;
-          $('#auto').style.display='block';
-          $('#auto').textContent='✓ 线路可用，3 秒后自动进入看板…';
-          setTimeout(()=>location.href=l.url,3000);
-        }
-      }else $('#dot'+i).classList.add('off');
-    }catch(e){ $('#dot'+i).classList.add('off'); }
+      await fetch(l.url+'/?t='+Date.now(),{signal:ctl.signal,cache:'no-store',mode:'no-cors'});
+      $('#dot'+i).classList.add('on');
+      $('#stxt'+i).textContent='可用 ✓';
+      if(!jumped){
+        jumped=true;
+        $('#auto').style.display='block';
+        $('#auto').textContent='✓ 已找到可用线路，3 秒后自动进入看板…';
+        setTimeout(()=>location.href=l.url,3000);
+      }
+    }catch(e){ $('#dot'+i).classList.add('off'); $('#stxt'+i).textContent='当前不通'; }
   });
 }
 main();
