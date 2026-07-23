@@ -1,15 +1,15 @@
 {
-  "updated": "2026-07-23 16:20",
+  "updated": "2026-07-23 16:25",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://cardiac-leather-princess-anytime.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://indication-provinces-jump-personally.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
