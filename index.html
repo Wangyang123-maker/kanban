@@ -62,22 +62,16 @@ async function main(){
     catch(e){ prompt('长按复制：',b.dataset.u); }
     setTimeout(()=>b.textContent='复制地址',1500);
   });
-  // 逐个探测可用性（no-cors：只看通不通，跨域也能探），第一个通的自动跳转
-  let jumped=false;
+  // 用服务端健康接口探测，避免 no-cors 把 404/错误页误判为可用。
   d.links.forEach(async(l,i)=>{
-    const t0=Date.now();
     try{
       const ctl=new AbortController();
-      setTimeout(()=>ctl.abort(),8000);
-      await fetch(l.url+'/?t='+Date.now(),{signal:ctl.signal,cache:'no-store',mode:'no-cors'});
+      setTimeout(()=>ctl.abort(),6000);
+      const r=await fetch(l.url+'/api/status?probe='+Date.now(),{signal:ctl.signal,cache:'no-store',mode:'cors'});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      await r.json();
       $('#dot'+i).classList.add('on');
       $('#stxt'+i).textContent='可用 ✓';
-      if(!jumped){
-        jumped=true;
-        $('#auto').style.display='block';
-        $('#auto').textContent='✓ 已找到可用线路，3 秒后自动进入看板…';
-        setTimeout(()=>location.href=l.url,3000);
-      }
     }catch(e){ $('#dot'+i).classList.add('off'); $('#stxt'+i).textContent='当前不通'; }
   });
 }
