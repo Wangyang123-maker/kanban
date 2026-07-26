@@ -1,15 +1,15 @@
 {
-  "updated": "2026-07-26 13:32",
+  "updated": "2026-07-26 14:32",
   "links": [
     {
-      "name": "线路一（推荐）",
+      "name": "线路一（推荐·当前离线）",
       "url": "https://knit-cups-youth-cadillac.trycloudflare.com",
-      "primary": true
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
