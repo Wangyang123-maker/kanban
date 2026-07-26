@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>库存查询看板</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1420; color:#dbe4f0; font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif; padding:16px; min-height:100vh; }
+  .nav { display:flex; gap:16px; font-size:13px; margin-bottom:12px; flex-wrap:wrap; }
+  .nav a { color:#7d8ca3; text-decoration:none; padding:4px 10px; border-radius:6px; border:1px solid #1f2c42; }
+  .nav a.cur { color:#fff; background:#16202f; border-color:#2563eb; }
+  .nav a:hover { color:#dbe4f0; }
+  .auto-sw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:#7d8ca3; flex-wrap:wrap; }
+  .switch { position:relative; width:34px; height:18px; display:inline-block; flex-shrink:0; }
+  .switch input { display:none; }
+  .switch i { position:absolute; inset:0; background:#1f2c42; border-radius:18px; transition:.2s; cursor:pointer; }
+  .switch i::after { content:""; position:absolute; width:14px; height:14px; left:2px; top:2px; background:#7d8ca3; border-radius:50%; transition:.2s; }
+  .switch input:checked + i { background:#059669; }
+  .switch input:checked + i::after { transform:translateX(16px); background:#fff; }
+  .sw-hint { font-size:11px; color:#f59e0b; display:none; }
+  .sw-hint.show { display:inline; }
+  .header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .header h1 { font-size:19px; font-weight:600; color:#fff; letter-spacing:1px; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#34d399; margin-right:8px; box-shadow:0 0 8px #34d399; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+  .meta { font-size:12px; color:#7d8ca3; }
+  .card { background:#121a28; border:1px solid #1f2c42; border-radius:12px; padding:13px 15px; margin-top:10px; }
+  .card h2 { font-size:14px; font-weight:600; color:#a8b8cc; margin-bottom:10px; display:flex; align-items:center; }
+  .card h2 .tag { font-size:11px; color:#5c6b82; font-weight:400; margin-left:8px; flex:1; }
+  .exp-btn { background:#16202f; border:1px solid #1f2c42; color:#7d8ca3; font-size:11px; border-radius:6px; padding:3px 10px; cursor:pointer; text-decoration:none; white-space:nowrap; }
+  .exp-btn:hover { color:#fff; border-color:#2563eb; }
+  .query-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  select, .search-box { background:#0d1420; color:#dbe4f0; border:1px solid #1f2c42; border-radius:8px; padding:7px 10px; font-size:13px; }
+  select { min-width:150px; }
+  .search-box { flex:1; min-width:180px; }
+  .search-box:focus, select:focus { outline:none; border-color:#2563eb; }
+  /* SPU 可搜索下拉（避免一次性渲染数百个 option 造成卡顿） */
+  .combo { position:relative; display:inline-block; }
+  .combo-input { min-width:240px; flex:none; }
+  .combo-list { position:absolute; top:calc(100% + 2px); left:0; z-index:60; width:340px;
+    max-width:80vw; max-height:300px; overflow-y:auto; background:#16202f; border:1px solid #1f2c42;
+    border-radius:8px; box-shadow:0 10px 28px rgba(0,0,0,.55); }
+  .combo-item { padding:6px 10px; font-size:12px; color:#dbe4f0; cursor:pointer;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .combo-item:hover, .combo-item.cur { background:#1f2c42; }
+  .combo-item .cnt { color:#5c6b82; margin-left:6px; font-size:11px; }
+  .combo-more { padding:6px 10px; font-size:11px; color:#5c6b82; text-align:center; }
+  .sku-info { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:10px; }
+  .mini { background:linear-gradient(145deg,#16202f,#121a28); border:1px solid #1f2c42; border-radius:10px; padding:10px 12px; }
+  .mini .label { font-size:11px; color:#7d8ca3; margin-bottom:4px; }
+  .mini .value { font-size:18px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums; }
+  .mini .value.small { font-size:13px; line-height:1.5; }
+  .tscroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:12px; min-width:520px; }
+  th { text-align:left; color:#5c6b82; font-weight:400; padding:4px 6px; border-bottom:1px solid #1f2c42; white-space:nowrap; }
+  td { padding:5px 6px; border-bottom:1px solid #182234; color:#c4d0e0; vertical-align:top; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.pname { white-space:normal; word-break:break-word; min-width:200px; max-width:320px; line-height:1.5; }
+  tr.zero-stock td { color:#4b5a72; }
+  tr.zero-stock td.num .z { color:#f87171; font-weight:700; }
+  tr.rowlink { cursor:pointer; }
+  tr.rowlink:hover td { background:#16202f; }
+  .replen { color:#f59e0b; font-weight:700; }
+  .hit { color:#60a5fa; cursor:pointer; }
+  .hit:hover { text-decoration:underline; }
+  .sec-title { font-size:15px; font-weight:600; color:#a8b8cc; margin:18px 0 4px; }
+  .cat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cat-grid .card { margin-top:0; }
+  .cat-grid .card:first-child { grid-column:1/-1; }
+  .search-results { max-height:260px; overflow-y:auto; margin-bottom:10px; display:none; }
+  .search-results.show { display:block; }
+  .bar-row { display:flex; align-items:center; gap:8px; margin:4px 0; font-size:12px; }
+  .bar-row .bl { width:180px; color:#a8b8cc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:0; }
+  .bar-row .bt { flex:1; height:10px; background:#182234; border-radius:5px; overflow:hidden; }
+  .bar-row .bf { height:100%; background:#2563eb; border-radius:5px; }
+  .bar-row .bv { width:130px; text-align:right; color:#c4d0e0; font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .dio-r { color:#f87171; font-weight:700; }
+  .dio-y { color:#f59e0b; font-weight:700; }
+  .dio-g { color:#34d399; font-weight:700; }
+  .spu-sec { font-size:13px; color:#a8b8cc; margin:14px 0 6px; }
+  .foot { margin-top:14px; font-size:11px; color:#43516a; text-align:center; }
+  @media (max-width: 860px) {
+    body { padding:10px; }
+    .sku-info { grid-template-columns:repeat(2,1fr); }
+    .cat-grid { grid-template-columns:1fr; }
+    td.pname { min-width:150px; }
+  }
+  /* 同行高亮: 悬停(浅) + 点击锁定(深一档); !important 覆盖斑马纹/+8/选中行背景; 锁定规则在后, 悬停时仍保持锁定色 */
+  tbody tr:hover td { background:rgba(45,212,191,.12) !important; }
+  tbody tr.hl td { background:rgba(45,212,191,.22) !important; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="index.html">零售看板</a>
+  <a href="inventory.html">库存看板</a>
+  <a href="stock.html" class="cur">库存查询</a>
+  <a href="product.html">商品分析</a>
+  <a href="insights.html">经营分析</a>
+  <a href="target.html">达成看板</a>
+  <a href="upload.html">手动上传</a>
+  <a href="guide.html">使用指南</a>
+  <span class="auto-sw">自动获取数据 <label class="switch"><input type="checkbox" id="autoRefresh"><i></i></label><span class="sw-hint" id="arHint">已关闭，数据将不再自动更新，可手动上传</span></span>
+</div>
+<div class="header">
+  <h1><span class="dot"></span>库存查询看板</h1>
+  <div class="meta">数据快照时间 <span id="snapshot">-</span></div>
+</div>
+
+<!-- A. 库存查询 -->
+<div class="card" style="margin-top:0">
+  <h2>库存查询<span class="tag">大类 → SPU → SKU 三级联动，可按门店筛选</span></h2>
+  <div class="query-bar">
+    <select id="selStore"></select>
+    <select id="selCat"></select>
+    <span class="combo" id="spuCombo">
+      <input type="text" id="selSpu" class="search-box combo-input"
+             placeholder="选择 SPU（点击展开，输入筛选）…" autocomplete="off">
+      <div class="combo-list" id="selSpuList" style="display:none"></div>
+    </span>
+    <select id="selSku"></select>
+    <input class="search-box" id="searchBox" placeholder="搜索商品名称或条码（跨大类实时过滤）…">
+  </div>
+  <div class="search-results tscroll" id="searchResults"></div>
+  <div id="overview"></div>
+  <div id="spuDetail" style="display:none"></div>
+  <div id="detail" style="display:none">
+    <div class="sku-info" id="skuInfo"></div>
+    <div class="tscroll"><table id="storeTable"><thead><tr>
+      <th>#</th><th>门店</th><th class="num">可售库存</th><th class="num">近4周销量</th>
+    </tr></thead><tbody></tbody></table></div>
+    <div id="hqLine" style="margin:10px 0 0;font-size:12px;color:#a8b8cc;display:none"></div>
+    <div style="margin-top:14px">
+      <div style="font-size:13px;color:#a8b8cc;margin-bottom:8px">门店 × 渠道 库存分布</div>
+      <div id="chanMatrix"></div>
+    </div>
+  </div>
+</div>
+
+<!-- B. 各产业缺货看板 -->
+<div class="sec-title">各产业缺货看板<span style="font-size:11px;color:#5c6b82;font-weight:400;margin-left:8px">周度补货 TOP10（按大类）</span></div>
+<div class="cat-grid" id="shortageGrid"></div>
+
+<!-- C. 各产业滞销看板 -->
+<div class="sec-title">各产业滞销看板<span style="font-size:11px;color:#5c6b82;font-weight:400;margin-left:8px">慢周转 TOP10（按大类）</span></div>
+<div class="cat-grid" id="turnoverGrid"></div>
+
+<div class="foot">数据来源：首茂IPS 即时库存 + 零售单 ｜ stocktree.json / inventory.json</div>
+
+<script>
+let TREE=null, INV=null;
+const FIVE=['手机','穿戴','平板','电脑','音频'];
+function fmtInt(v){ return v==null?'-':Math.round(v).toLocaleString('zh-CN'); }
+function fmtDays(v){ return v==null?'∞':v.toLocaleString('zh-CN',{maximumFractionDigits:1}); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- A. 库存查询 ---------- */
+function fillSel(sel, items, getVal, getText, placeholder){
+  sel.innerHTML = `<option value="">${placeholder}</option>` +
+    items.map((it,i)=>`<option value="${i}">${esc(getText(it))}</option>`).join('');
+}
+let SPU_IDX = '';   // 当前 SPU 下标(字符串), 由可搜索下拉维护; '' = 未选
+function selectedStore(){ return document.getElementById('selStore').value; }
+function curCat(){ const i=document.getElementById('selCat').value; return i===''?null:TREE.categories[+i]; }
+function curSpu(){ const c=curCat(); return !c||SPU_IDX===''?null:c.spus[+SPU_IDX]; }
+function setSpuIdx(i){
+  SPU_IDX = (i===''||i==null) ? '' : String(i);
+  const p = curSpu();
+  document.getElementById('selSpu').value = p ? p.spu : '';
+}
+function curSku(){ const p=curSpu(); const i=document.getElementById('selSku').value; return !p||i===''?null:p.skus[+i]; }
+function scopedStoreDetail(r){ const store=selectedStore(); return store?(r.storeDetail||[]).filter(d=>d.store===store):(r.storeDetail||[]); }
+function scopedStock(r){ return scopedStoreDetail(r).reduce((sum,d)=>sum+(d.stock||0),0); }
+function scopedSold(r){ return scopedStoreDetail(r).reduce((sum,d)=>sum+(d.sold28||0),0); }
+function skuMatchesStore(r){ return !selectedStore()||scopedStoreDetail(r).length>0; }
+/* SPU 可搜索下拉: 输入过滤, 首屏最多渲染 SPU_COMBO_CAP 个匹配项 */
+const SPU_COMBO_CAP = 50;
+let SPU_COMBO_OPEN = false;
+function openSpuCombo(){
+  SPU_COMBO_OPEN = true;
+  document.getElementById('selSpu').value = '';  // 展开即见全部匹配
+  document.getElementById('selSpuList').style.display = 'block';
+  renderSpuComboList();
+}
+function closeSpuCombo(){
+  if(!SPU_COMBO_OPEN) return;
+  SPU_COMBO_OPEN = false;
+  document.getElementById('selSpuList').style.display = 'none';
+  const p = curSpu();
+  document.getElementById('selSpu').value = p ? p.spu : '';
+}
+function pickSpu(i){
+  setSpuIdx(i);
+  closeSpuCombo();
+  onSpuChange();
+}
+function renderSpuComboList(){
+  const list = document.getElementById('selSpuList');
+  const c = curCat();
+  if(!c){ list.innerHTML = '<div class="combo-more">请先选择大类</div>'; return; }
+  const q = document.getElementById('selSpu').value.trim().toLowerCase();
+  let items = c.spus.map((p,i)=>({p,i}));
+  if(q) items = items.filter(({p})=>p.spu.toLowerCase().includes(q));
+  const total = items.length;
+  const show = items.slice(0, SPU_COMBO_CAP);
+  let html = show.map(({p,i})=>
+    `<div class="combo-item${String(i)===SPU_IDX?' cur':''}" data-i="${i}" title="${esc(p.spu)}">${esc(p.spu)}<span class="cnt">${fmtInt(p.totalStock!=null?p.totalStock:0)} 件 · ${p.skus.length} SKU</span></div>`).join('');
+  if(total > SPU_COMBO_CAP)
+    html += `<div class="combo-more">仅显示前 ${SPU_COMBO_CAP} 项（共 ${total} 项匹配），继续输入可缩小范围</div>`;
+  else if(!total) html = '<div class="combo-more">无匹配 SPU</div>';
+  list.innerHTML = html;
+  list.querySelectorAll('.combo-item').forEach(it=>
+    it.addEventListener('mousedown', e=>{ e.preventDefault(); pickSpu(it.dataset.i); }));
+}
+
+function dioHtml(v){
+  if(v==null) return '<span style="color:#4b5a72">—</span>';
+  const cls = v>60 ? 'dio-r' : (v>=30 ? 'dio-y' : 'dio-g');
+  return `<span class="${cls}">${v.toLocaleString('zh-CN',{maximumFractionDigits:1})}</span>`;
+}
+function renderOverview(){
+  const c = curCat();
+  const ov = document.getElementById('overview');
+  document.getElementById('detail').style.display='none';
+  document.getElementById('spuDetail').style.display='none';
+  if(!c){ ov.innerHTML=''; return; }
+  ov.innerHTML = `<div class="tscroll"><table><thead><tr>
+    <th>#</th><th>SPU（产品族）</th><th class="num">SKU数</th><th class="num">总可售库存</th><th class="num">近4周销量</th><th class="num">周转天数</th></tr></thead><tbody>`+
+    c.spus.map((p,i)=>{
+      const skus=p.skus.filter(skuMatchesStore);
+      const stock=selectedStore()?skus.reduce((a,r)=>a+scopedStock(r),0):(p.totalStock!=null?p.totalStock:p.skus.reduce((a,r)=>a+r.stock,0));
+      const sold=selectedStore()?skus.reduce((a,r)=>a+scopedSold(r),0):(p.sold28!=null?p.sold28:p.skus.reduce((a,r)=>a+r.sold28,0));
+      return `<tr class="rowlink" data-spu="${i}"><td>${i+1}</td><td>${esc(p.spu)}</td><td class="num">${skus.length}</td><td class="num">${fmtInt(stock)}</td><td class="num">${fmtInt(sold)}</td><td class="num">${dioHtml(p.dio)}</td></tr>`;
+    }).join('')+`</tbody></table></div>`;
+  ov.querySelectorAll('tr.rowlink').forEach(tr=>tr.addEventListener('click',()=>{
+    setSpuIdx(tr.dataset.spu);
+    onSpuChange();
+  }));
+}
+function renderSpuDetail(){
+  const p = curSpu();
+  const sd = document.getElementById('spuDetail');
+  document.getElementById('detail').style.display='none';
+  if(!p){ sd.style.display='none'; renderOverview(); return; }
+  document.getElementById('overview').innerHTML='';
+  sd.style.display='block';
+  const chans = p.channels||[];
+  const ctot = chans.reduce((a,c)=>a+c.stock,0)||1;
+  const chanHtml = chans.length
+    ? chans.map(c=>`<div class="bar-row"><div class="bl" title="${esc(c.channel)}">${esc(shortChan(c.channel))}</div><div class="bt"><div class="bf" style="width:${Math.min(100,c.stock/ctot*100).toFixed(1)}%"></div></div><div class="bv">${fmtInt(c.stock)} 件 · ${(c.stock/ctot*100).toFixed(1)}%</div></div>`).join('')
+    : '<div style="font-size:12px;color:#5c6b82">无渠道数据</div>';
+  const storeRows = scopedStoreDetail(p).map((d,i)=>
+    d.stock<=0
+      ? `<tr class="zero-stock"><td>${i+1}</td><td>${esc(d.store)}</td><td class="num"><span class="z">0</span></td><td class="num">${fmtInt(d.sold28)}</td><td class="num">${dioHtml(d.dio)}</td></tr>`
+      : `<tr><td>${i+1}</td><td>${esc(d.store)}</td><td class="num">${fmtInt(d.stock)}</td><td class="num">${fmtInt(d.sold28)}</td><td class="num">${dioHtml(d.dio)}</td></tr>`).join('');
+  const skuRows = p.skus.filter(skuMatchesStore).map((r,i)=>`<tr class="rowlink" data-sku="${p.skus.indexOf(r)}"><td>${i+1}</td><td class="pname hit">${esc(r.name)}</td><td>${esc(r.sku)}</td><td class="num">${fmtInt(selectedStore()?scopedStock(r):r.stock)}</td><td class="num">${fmtInt(selectedStore()?scopedSold(r):r.sold28)}</td></tr>`).join('');
+  sd.innerHTML = `
+    <div class="sku-info">
+      <div class="mini"><div class="label">SPU（产品族）</div><div class="value small">${esc(p.spu)}</div></div>
+      <div class="mini"><div class="label">总可售库存（件）</div><div class="value">${fmtInt(p.totalStock)}</div></div>
+      <div class="mini"><div class="label">近4周销量（件）</div><div class="value">${fmtInt(p.sold28)}</div></div>
+      <div class="mini"><div class="label">周转天数</div><div class="value">${p.dio==null?'—':p.dio}</div></div>
+      ${p.hqStock?`<div class="mini"><div class="label">总部库存（件）</div><div class="value">${fmtInt(p.hqStock)}</div></div>`:''}
+    </div>
+    <div class="spu-sec">渠道分布</div>${chanHtml}
+    <div class="spu-sec">门店明细</div>
+    <div class="tscroll"><table><thead><tr><th>#</th><th>门店</th><th class="num">可售库存</th><th class="num">近4周销量</th><th class="num">周转天数</th></tr></thead><tbody>${storeRows||'<tr><td colspan="5">暂无</td></tr>'}</tbody></table></div>
+    <div class="spu-sec">SKU 列表<span style="font-size:11px;color:#5c6b82;font-weight:400;margin-left:8px">点击下钻到 SKU 详情</span></div>
+    <div class="tscroll"><table><thead><tr><th>#</th><th>商品名称</th><th>SKU</th><th class="num">库存</th><th class="num">近4周销量</th></tr></thead><tbody>${skuRows}</tbody></table></div>`;
+  sd.querySelectorAll('tr.rowlink').forEach(tr=>tr.addEventListener('click',()=>{
+    document.getElementById('selSku').value = tr.dataset.sku;
+    renderDetail();
+  }));
+}
+function renderDetail(){
+  const r = curSku();
+  const ov = document.getElementById('overview');
+  const dt = document.getElementById('detail');
+  document.getElementById('spuDetail').style.display='none';
+  if(!r){ dt.style.display='none'; renderOverviewVisibility(); return; }
+  ov.innerHTML='';
+  dt.style.display='block';
+  const scoped=scopedStoreDetail(r);
+  const minis = [
+    {label:'商品全名', value:r.name, small:true},
+    {label:'总可售库存（件）', value:fmtInt(selectedStore()?scopedStock(r):r.stock)},
+    {label:'有货门店数（家）', value:fmtInt(selectedStore()?scoped.filter(d=>d.stock>0).length:r.stores)},
+    {label:'近4周销量（件）', value:fmtInt(selectedStore()?scopedSold(r):r.sold28)},
+  ];
+  document.getElementById('skuInfo').innerHTML = minis.map(m=>
+    `<div class="mini"><div class="label">${m.label}</div><div class="value ${m.small?'small':''}">${esc(m.value)}</div></div>`).join('');
+  document.querySelector('#storeTable tbody').innerHTML = scopedStoreDetail(r).map((d,i)=>
+    d.stock<=0
+      ? `<tr class="zero-stock"><td>${i+1}</td><td>${esc(d.store)}</td><td class="num"><span class="z">0</span></td><td class="num">${fmtInt(d.sold28)}</td></tr>`
+      : `<tr><td>${i+1}</td><td>${esc(d.store)}</td><td class="num">${fmtInt(d.stock)}</td><td class="num">${fmtInt(d.sold28)}</td></tr>`
+  ).join('');
+  renderChanMatrix(r);
+  const hqLine = document.getElementById('hqLine');
+  if(r.hqStock){
+    const det = (r.hqDetail||[]).map(d=>`${esc(d.org)} ${fmtInt(d.stock)} 件`).join(' ｜ ');
+    hqLine.innerHTML = `总部库存：<b style="color:#fff">${fmtInt(r.hqStock)}</b> 件` + (det?`（${det}）`:'');
+    hqLine.style.display = 'block';
+  } else { hqLine.style.display = 'none'; }
+}
+function shortChan(n){
+  return String(n||'').replace(/(通信科技|科技|通信)?有限公司.*$/,'')||n;
+}
+function renderChanMatrix(r){
+  const box = document.getElementById('chanMatrix');
+  const chans = (r.channels||[]).map(c=>c.channel);
+  if(chans.length<=1){
+    const only = chans[0]||'未标注';
+    box.innerHTML = `<div style="font-size:12px;color:#7d8ca3">全部来自：<span style="color:#60a5fa">${esc(only)}</span></div>`;
+    return;
+  }
+  const rows = scopedStoreDetail(r).filter(d=>d.channel && d.channel.length);
+  box.innerHTML = `<div class="tscroll"><table><thead><tr><th>门店</th>${
+    chans.map(c=>`<th class="num" title="${esc(c)}">${esc(shortChan(c))}</th>`).join('')
+    }<th class="num">合计</th></tr></thead><tbody>${
+    rows.map(d=>{
+      const m = {}; d.channel.forEach(c=>m[c.channel]=c.stock);
+      const tot = d.channel.reduce((a,c)=>a+c.stock,0);
+      return `<tr><td>${esc(d.store)}</td>${
+        chans.map(c=> m[c] ? `<td class="num">${fmtInt(m[c])}</td>` : `<td class="num" style="color:#33415a">0</td>`).join('')
+        }<td class="num" style="color:#f59e0b;font-weight:700">${fmtInt(tot)}</td></tr>`;
+    }).join('')}</tbody></table></div>`;
+}
+function renderOverviewVisibility(){ document.getElementById('overview').style.display='block'; }
+function onStoreChange(){
+  const r=curSku();
+  if(r) renderDetail();
+  else if(curSpu()) renderSpuDetail();
+  else renderOverview();
+}
+function onCatChange(){
+  setSpuIdx('');
+  fillSel(document.getElementById('selSku'), [], null, null, '选择 SKU…');
+  renderOverview();
+}
+function onSpuChange(){
+  const p = curSpu();
+  fillSel(document.getElementById('selSku'), p?p.skus:[], null,
+    r=>(r.name.length>34? r.name.slice(0,34)+'…':r.name)+'（'+r.sku+'）', '选择 SKU…');
+  if(p && p.skus.length===1){ document.getElementById('selSku').value='0'; renderDetail(); }
+  else if(p){ renderSpuDetail(); }
+  else { document.getElementById('detail').style.display='none'; renderOverview(); }
+}
+function onSkuChange(){ renderDetail(); }
+function allSkus(){
+  const out=[];
+  TREE.categories.forEach((c,ci)=>c.spus.forEach((p,pi)=>p.skus.forEach((r,si)=>out.push({ci,pi,si,r,cat:c.cat,spu:p.spu}))));
+  return out;
+}
+function onSearch(){
+  const kw = document.getElementById('searchBox').value.trim().toLowerCase();
+  const box = document.getElementById('searchResults');
+  if(!kw){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const hits = allSkus().filter(h=>h.r.name.toLowerCase().includes(kw)||h.r.sku.toLowerCase().includes(kw)).slice(0,30);
+  box.innerHTML = hits.length
+    ? `<table><tbody>`+hits.map((h,i)=>`<tr class="rowlink" data-i="${i}"><td>${esc(h.cat)}</td><td class="pname hit">${esc(h.r.name)}</td><td>${esc(h.r.sku)}</td><td class="num">${fmtInt(h.r.stock)}件</td></tr>`).join('')+`</tbody></table>`
+    : '<div style="font-size:12px;color:#5c6b82;padding:6px">无匹配结果</div>';
+  box.classList.add('show');
+  const rows = box.querySelectorAll('tr.rowlink');
+  rows.forEach((tr,i)=>tr.addEventListener('click',()=>{
+    const h = hits[+tr.dataset.i];
+    document.getElementById('selCat').value = h.ci;
+    onCatChange();
+    setSpuIdx(h.pi);
+    onSpuChange();
+    document.getElementById('selSku').value = h.si;
+    renderDetail();
+    box.classList.remove('show');
+  }));
+}
+
+/* ---------- B/C. 缺货/滞销看板 ---------- */
+function renderCatBoards(){
+  const sg = document.getElementById('shortageGrid');
+  sg.innerHTML = FIVE.map(cat=>{
+    const rows = (INV.weekly||[]).filter(r=>r.cat===cat).slice(0,10);
+    return `<div class="card"><h2>${cat}缺货 TOP10<span class="tag">周度应补货</span><a class="exp-btn" href="/export?table=weekly&category=${encodeURIComponent(cat)}">导出Excel</a></h2>
+      <div class="tscroll"><table><thead><tr><th>#</th><th>门店</th><th>商品名称</th><th class="num">应补数量</th></tr></thead><tbody>${
+      rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.store)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td class="num replen">${fmtInt(r.replenish)}</td></tr>`).join('')
+      || '<tr><td colspan="4">暂无</td></tr>'}</tbody></table></div></div>`;
+  }).join('');
+  const tg = document.getElementById('turnoverGrid');
+  tg.innerHTML = FIVE.map(cat=>{
+    const rows = (INV.turnover||[]).filter(r=>r.cat===cat).slice(0,10);
+    return `<div class="card"><h2>${cat}滞销 TOP10<span class="tag">慢周转</span><a class="exp-btn" href="/export?table=turnover&category=${encodeURIComponent(cat)}">导出Excel</a></h2>
+      <div class="tscroll"><table><thead><tr><th>#</th><th>门店</th><th>商品名称</th><th class="num">库存</th><th class="num">近30天销量</th><th class="num">可售天数</th></tr></thead><tbody>${
+      rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.store)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td class="num">${fmtInt(r.stock)}</td><td class="num">${fmtInt(r.sold30)}</td><td class="num">${fmtDays(r.days)}</td></tr>`).join('')
+      || '<tr><td colspan="6">暂无</td></tr>'}</tbody></table></div></div>`;
+  }).join('');
+}
+
+async function boot(){
+  try{
+    const [r1,r2] = await Promise.all([
+      fetch('stocktree.json?_='+Date.now(),{cache:'no-store'}),
+      fetch('inventory.json?_='+Date.now(),{cache:'no-store'})]);
+    if(r1.ok) TREE = await r1.json();
+    if(r2.ok) INV = await r2.json();
+  }catch(e){}
+  if(TREE){
+    document.getElementById('snapshot').textContent = TREE.snapshotAt||'-';
+    const storeSet=new Set();
+    TREE.categories.forEach(c=>(c.spus||[]).forEach(p=>(p.skus||[]).forEach(r=>(r.storeDetail||[]).forEach(d=>{if(d.store) storeSet.add(d.store)}))));
+    const stores=[...storeSet].sort();
+    const storeSel=document.getElementById('selStore');
+    storeSel.innerHTML='<option value="">全部门店</option>'+stores.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    storeSel.addEventListener('change', onStoreChange);
+    fillSel(document.getElementById('selCat'), TREE.categories, null, c=>c.cat, '选择大类…');
+    document.getElementById('selCat').value = '0';
+    onCatChange();
+    document.getElementById('selCat').addEventListener('change', onCatChange);
+    const spuInp = document.getElementById('selSpu');
+    spuInp.addEventListener('focus', openSpuCombo);
+    spuInp.addEventListener('input', ()=>{ SPU_COMBO_OPEN ? renderSpuComboList() : openSpuCombo(); });
+    spuInp.addEventListener('blur', ()=>{ setTimeout(closeSpuCombo, 150); });
+    spuInp.addEventListener('keydown', e=>{
+      if(e.key==='Escape'){ closeSpuCombo(); spuInp.blur(); }
+      else if(e.key==='Enter' && SPU_COMBO_OPEN){
+        e.preventDefault();
+        const first = document.querySelector('#selSpuList .combo-item');
+        if(first) pickSpu(first.dataset.i);
+      }
+    });
+    document.addEventListener('click', e=>{ if(!e.target.closest('#spuCombo')) closeSpuCombo(); });
+    document.getElementById('selSku').addEventListener('change', onSkuChange);
+    document.getElementById('searchBox').addEventListener('input', onSearch);
+  }
+  if(INV) renderCatBoards();
+}
+
+/* 自动获取数据总开关 */
+async function initAutoRefresh(){
+  const cb = document.getElementById('autoRefresh');
+  const hint = document.getElementById('arHint');
+  if(!cb) return;
+  const sync = ()=>hint.classList.toggle('show', !cb.checked);
+  try{
+    const r = await fetch('/api/auto-refresh', {cache:'no-store'});
+    if(r.ok){ const d = await r.json(); cb.checked = !!d.enabled; }
+  }catch(e){ /* 接口不可用时保持默认开 */ }
+  sync();
+  cb.addEventListener('change', async ()=>{
+    const want = cb.checked;
+    try{
+      const r = await fetch('/api/auto-refresh', {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({enabled:want})});
+      const d = await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || ('HTTP '+r.status));
+      cb.checked = !!d.enabled;
+    }catch(e){
+      cb.checked = !want;
+      alert('设置失败：'+e.message);
+    }
+    sync();
+  });
+}
+initAutoRefresh();
+boot();
+/* 同行高亮: 点击锁定(事件委托; 只加样式不拦截现有行点击; 排序/翻页/加载更多重渲染后自动失效) */
+document.addEventListener('click', e=>{
+  const tr = e.target.closest('tbody tr');
+  if(!tr) return;
+  const was = tr.classList.contains('hl');
+  tr.parentElement.querySelectorAll('tr.hl').forEach(r=>r.classList.remove('hl'));
+  if(!was) tr.classList.add('hl');
+});
+</script>
+</body>
+</html>

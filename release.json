@@ -1,0 +1,13 @@
+{
+  "updated": "2026-07-26T12:27:00+08:00",
+  "checksumStatus": "passed",
+  "files": {
+    "data.json": "afbf7a4a057b8eed127c884fa3a41dd737e5940629192f6afd2253cfef717055",
+    "dailycube.json": "d1f8f80214c0cb4a84f9a2f3ee11ca52bcc9e1a5fdc24bc83988df630fed8b07",
+    "inventory.json": "2e15f5c57c514709f7ae5c63b9cc10a08efe90fca8b60fc22dec8dce7e69a492",
+    "stocktree.json": "ed323ad099a29af09ebe93b14f0e5d6551a3b7fd821c568e5eb99178622ce917",
+    "mtd.json": "053dc4007ec2f633e2e6974947bb0552d734c5b9d874a21fa9214d4ae65822ae",
+    "insights.json": "6a73d706e28402dd4737c59e8e4cc4aa8bacafae6b937cd0762d0541eea1accd",
+    "demo.json": "7ffb4197d04e55c4de3a998254001b4a34e44dbd2e6dc84235a9cb978f5a794d"
+  }
+}

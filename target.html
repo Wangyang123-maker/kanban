@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>达成率看板</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1420; color:#dbe4f0; font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif; padding:16px; min-height:100vh; }
+  .nav { display:flex; gap:16px; font-size:13px; margin-bottom:12px; flex-wrap:wrap; }
+  .nav a { color:#7d8ca3; text-decoration:none; padding:4px 10px; border-radius:6px; border:1px solid #1f2c42; }
+  .nav a.cur { color:#fff; background:#16202f; border-color:#2563eb; }
+  .nav a:hover { color:#dbe4f0; }
+  .auto-sw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:#7d8ca3; flex-wrap:wrap; }
+  .switch { position:relative; width:34px; height:18px; display:inline-block; flex-shrink:0; }
+  .switch input { display:none; }
+  .switch i { position:absolute; inset:0; background:#1f2c42; border-radius:18px; transition:.2s; cursor:pointer; }
+  .switch i::after { content:""; position:absolute; width:14px; height:14px; left:2px; top:2px; background:#7d8ca3; border-radius:50%; transition:.2s; }
+  .switch input:checked + i { background:#059669; }
+  .switch input:checked + i::after { transform:translateX(16px); background:#fff; }
+  .sw-hint { font-size:11px; color:#f59e0b; display:none; }
+  .sw-hint.show { display:inline; }
+  .header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .header h1 { font-size:19px; font-weight:600; color:#fff; letter-spacing:1px; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#34d399; margin-right:8px; box-shadow:0 0 8px #34d399; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+  .meta { font-size:12px; color:#7d8ca3; }
+  .card { background:#121a28; border:1px solid #1f2c42; border-radius:12px; padding:13px 15px; margin-top:10px; }
+  .card h2 { font-size:14px; font-weight:600; color:#a8b8cc; margin-bottom:10px; display:flex; align-items:center; }
+  .card h2 .tag { font-size:11px; color:#5c6b82; font-weight:400; margin-left:8px; flex:1; }
+  .exp-btn { background:#16202f; border:1px solid #1f2c42; color:#7d8ca3; font-size:11px; border-radius:6px; padding:3px 10px; cursor:pointer; text-decoration:none; white-space:nowrap; }
+  .exp-btn:hover { color:#fff; border-color:#2563eb; }
+  .kpi-row { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
+  .mini { background:linear-gradient(145deg,#16202f,#121a28); border:1px solid #1f2c42; border-radius:10px; padding:10px 12px; }
+  .mini .label { font-size:11px; color:#7d8ca3; margin-bottom:4px; }
+  .mini .value { font-size:19px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums; }
+  .mini .sub { font-size:11px; color:#5c6b82; margin-top:3px; }
+  .pbar { height:8px; background:#182234; border-radius:4px; overflow:hidden; margin-top:6px; position:relative; }
+  .pbar i { display:block; height:100%; border-radius:4px; }
+  .pbar .mark { position:absolute; top:-2px; bottom:-2px; width:2px; background:#dbe4f0; opacity:.7; }
+  .g { color:#34d399; } .y { color:#f59e0b; } .r { color:#f87171; } .n { color:#4b5a72; }
+  .bg { background:#059669; } .by { background:#d97706; } .br { background:#dc2626; }
+  .region-title { display:flex; align-items:baseline; gap:12px; margin:18px 0 6px; font-size:14px; font-weight:600; color:#a8b8cc; }
+  .region-title .rs { font-size:11px; color:#5c6b82; font-weight:400; }
+  .tscroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:12px; min-width:1080px; }
+  th { text-align:left; color:#5c6b82; font-weight:400; padding:4px 6px; border-bottom:1px solid #1f2c42; white-space:nowrap; }
+  td { padding:5px 6px; border-bottom:1px solid #182234; color:#c4d0e0; vertical-align:middle; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  tr.rowlink { cursor:pointer; }
+  tr.rowlink:hover td { background:#16202f; }
+  tr.detail-row td { background:#101826; font-size:11px; color:#8fa1ba; }
+  .mini-pbar { display:inline-block; width:70px; height:7px; background:#182234; border-radius:4px; overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .mini-pbar i { display:block; height:100%; }
+  .foot { margin-top:14px; font-size:11px; color:#43516a; text-align:center; }
+  @media (max-width: 1100px) { .kpi-row { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width: 700px) { body { padding:10px; } .kpi-row { grid-template-columns:repeat(2,1fr); } }
+  /* 同行高亮: 悬停(浅) + 点击锁定(深一档); !important 覆盖斑马纹/+8/选中行背景; 锁定规则在后, 悬停时仍保持锁定色 */
+  tbody tr:hover td { background:rgba(45,212,191,.12) !important; }
+  tbody tr.hl td { background:rgba(45,212,191,.22) !important; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="index.html">零售看板</a>
+  <a href="inventory.html">库存看板</a>
+  <a href="stock.html">库存查询</a>
+  <a href="product.html">商品分析</a>
+  <a href="insights.html">经营分析</a>
+  <a href="target.html" class="cur">达成看板</a>
+  <a href="upload.html">手动上传</a>
+  <a href="guide.html">使用指南</a>
+  <span class="auto-sw">自动获取数据 <label class="switch"><input type="checkbox" id="autoRefresh"><i></i></label><span class="sw-hint" id="arHint">已关闭，数据将不再自动更新，可手动上传</span></span>
+</div>
+<div class="header">
+  <h1><span class="dot"></span>达成率看板</h1>
+  <div class="meta"><span id="month">-</span> ｜ 数据截止 <span id="cutoff">-</span> ｜ 时间进度 <span id="prog">-</span></div>
+</div>
+
+<!-- TTL 卡片行 -->
+<div class="card" style="margin-top:0">
+  <h2>全公司（TTL）本月达成<span class="tag" id="ttlTag"></span><a class="exp-btn" href="/export?table=mtd">导出Excel</a></h2>
+  <div class="kpi-row" id="ttlRow"></div>
+</div>
+
+<!-- 区域 × 门店 -->
+<div id="regions"></div>
+
+<div class="foot">数据来源：mtd.json（零售单 MTD）× targets.json（月度销售分析工作簿）｜ 达成率 = MTD实绩 ÷ 月目标 ｜ 绿=达成率≥时间进度，橙=落后&lt;10pp，红=落后≥10pp</div>
+
+<script>
+let MTD=null;
+function fmtInt(v){ return v==null?'—':Math.round(v).toLocaleString('zh-CN'); }
+function fmtWan(v){ if(v==null) return '—'; return (v/10000).toLocaleString('zh-CN',{maximumFractionDigits:1})+'万'; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function pct(v){ return v==null?'<span class="n">—</span>':v+'%'; }
+function clsAch(ach, prog){ if(ach==null) return 'n'; const d=ach-prog*100; return d>=0?'g':(d>=-10?'y':'r'); }
+function barCls(ach, prog){ if(ach==null) return 'bg'; const d=ach-prog*100; return d>=0?'bg':(d>=-10?'by':'br'); }
+function signPct(v){ if(v==null) return '<span class="n">—</span>'; const c=v>=0?'g':'r'; return `<span class="${c}">${v>0?'+':''}${v}%</span>`; }
+
+function renderTtl(){
+  const t = MTD.TTL||{}, prog = MTD['时间进度']||0;
+  const achCls = clsAch(t['达成率'], prog);
+  const p = Math.min(100,(t['达成率']||0));
+  const ratio = t['配比']||{};
+  document.getElementById('ttlTag').textContent =
+    `目标 ${fmtWan(t.salesTarget)} ｜ 上月同期 ${fmtWan(t['上月同期'])} ｜ 环比 ${t['环比']==null?'—':t['环比']+'%'}`;
+  document.getElementById('ttlRow').innerHTML = `
+    <div class="mini"><div class="label">MTD 销售额实绩</div><div class="value">${fmtWan(t['实绩'])}</div>
+      <div class="sub">目标 ${fmtWan(t.salesTarget)}</div></div>
+    <div class="mini"><div class="label">达成率（对比时间进度 ${(prog*100).toFixed(1)}%）</div>
+      <div class="value ${achCls}">${t['达成率']==null?'—':t['达成率']+'%'}</div>
+      <div class="pbar"><i class="${barCls(t['达成率'],prog)}" style="width:${p}%"></i><span class="mark" style="left:${(prog*100).toFixed(1)}%"></span></div></div>
+    <div class="mini"><div class="label">预计全月达成</div><div class="value ${clsAch(t['预计达成'],1)}">${t['预计达成']==null?'—':t['预计达成']+'%'}</div>
+      <div class="sub">预计全月 ${fmtWan(t['预计全月'])}</div></div>
+    <div class="mini"><div class="label">毛利率</div><div class="value">${t['毛利率']==null?'—':t['毛利率']+'%'}</div>
+      <div class="sub">毛利目标 ${fmtWan(t.grossTarget)}</div></div>
+    <div class="mini"><div class="label">服务搭载率</div><div class="value">${t['服务搭载率']==null?'—':t['服务搭载率']+'%'}</div>
+      <div class="sub">运营商单数 ${fmtInt(t['运营商单数'])}</div></div>
+    <div class="mini"><div class="label">手机配比率（穿戴/平板/电脑/音频）</div>
+      <div class="value" style="font-size:15px">${[ '穿戴','平板','电脑','音频'].map(c=>`<span style="margin-right:8px">${c} <b>${ratio[c]==null?'—':ratio[c]+'%'}</b></span>`).join('')}</div>
+      <div class="sub">配件配比 ${ratio['配件']==null?'—':ratio['配件']+'%'}</div></div>`;
+}
+
+function renderRegions(){
+  const prog = MTD['时间进度']||0;
+  const box = document.getElementById('regions');
+  box.innerHTML = (MTD.regions||[]).map((rg,ri)=>`
+    <div class="region-title">${esc(rg.region)}
+      <span class="rs">实绩 ${fmtWan(rg['实绩合计'])} / 目标 ${fmtWan(rg['目标合计'])} ｜ 区域达成率 ${rg['区域达成率']==null?'—':rg['区域达成率']+'%'}</span></div>
+    <div class="card" style="margin-top:0"><div class="tscroll"><table><thead><tr>
+      <th>门店</th><th class="num">销售目标</th><th class="num">MTD实绩</th><th>达成率</th>
+      <th class="num">环比</th><th class="num">毛利率</th><th class="num">搭载率</th>
+      <th class="num">穿戴</th><th class="num">平板</th><th class="num">电脑</th><th class="num">音频</th>
+      <th class="num">预计全月达成</th></tr></thead><tbody>
+      ${rg.stores.map((s,si)=>{
+        const ac = clsAch(s['达成率'], prog), bc = barCls(s['达成率'], prog);
+        const ratio = s['配比']||{};
+        const w = Math.min(100, s['达成率']||0);
+        return `<tr class="rowlink" data-r="${ri}" data-s="${si}">
+          <td>${esc(s.name||s.store)}</td>
+          <td class="num">${fmtWan(s.salesTarget)}</td>
+          <td class="num">${fmtWan(s['实绩'])}</td>
+          <td><span class="mini-pbar"><i class="${bc}" style="width:${w}%"></i></span><span class="${ac}">${s['达成率']==null?'—':s['达成率']+'%'}</span></td>
+          <td class="num">${signPct(s['环比'])}</td>
+          <td class="num">${pct(s['毛利率'])}</td>
+          <td class="num">${pct(s['服务搭载率'])}</td>
+          <td class="num">${pct(ratio['穿戴'])}</td>
+          <td class="num">${pct(ratio['平板'])}</td>
+          <td class="num">${pct(ratio['电脑'])}</td>
+          <td class="num">${pct(ratio['音频'])}</td>
+          <td class="num">${pct(s['预计达成'])}</td></tr>
+        <tr class="detail-row" id="d${ri}_${si}" style="display:none"><td colspan="12">
+          配件配比 ${pct((s['配比']||{})['配件'])} ｜ 运营商单数 ${fmtInt(s['运营商单数'])} ｜ 上月同期 ${fmtWan(s['上月同期'])} ｜ 预计全月 ${fmtWan(s['预计全月'])} ｜ 进度差 ${s['进度差']==null?'—':s['进度差']+'pp'} ｜ 毛利目标 ${fmtWan(s.grossTarget)} ｜ 运营商目标 ${fmtInt(s.carrierTarget)} ｜ 配件目标 ${fmtInt(s.accTarget)}
+        </td></tr>`;
+      }).join('')}</tbody></table></div></div>`).join('');
+  box.querySelectorAll('tr.rowlink').forEach(tr=>tr.addEventListener('click',()=>{
+    const d = document.getElementById('d'+tr.dataset.r+'_'+tr.dataset.s);
+    if(d) d.style.display = d.style.display==='none'?'table-row':'none';
+  }));
+}
+
+async function boot(){
+  try{
+    const r = await fetch('mtd.json?_='+Date.now(),{cache:'no-store'});
+    if(r.ok) MTD = await r.json();
+  }catch(e){}
+  if(!MTD){
+    document.getElementById('regions').innerHTML =
+      '<div class="card">暂无 mtd.json：请先上传零售明细并重跑处理，或上传月度销售分析工作簿。</div>';
+    return;
+  }
+  document.getElementById('month').textContent = MTD['月份']||'-';
+  document.getElementById('cutoff').textContent = MTD['数据截止']||'-';
+  document.getElementById('prog').textContent =
+    ((MTD['时间进度']||0)*100).toFixed(1)+'%（'+MTD['已过天数']+'/'+MTD['当月天数']+' 天）';
+  renderTtl();
+  renderRegions();
+}
+
+/* 自动获取数据总开关 */
+async function initAutoRefresh(){
+  const cb = document.getElementById('autoRefresh');
+  const hint = document.getElementById('arHint');
+  if(!cb) return;
+  const sync = ()=>hint.classList.toggle('show', !cb.checked);
+  try{
+    const r = await fetch('/api/auto-refresh', {cache:'no-store'});
+    if(r.ok){ const d = await r.json(); cb.checked = !!d.enabled; }
+  }catch(e){}
+  sync();
+  cb.addEventListener('change', async ()=>{
+    const want = cb.checked;
+    try{
+      const r = await fetch('/api/auto-refresh', {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({enabled:want})});
+      const d = await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || ('HTTP '+r.status));
+      cb.checked = !!d.enabled;
+    }catch(e){
+      cb.checked = !want;
+      alert('设置失败：'+e.message);
+    }
+    sync();
+  });
+}
+initAutoRefresh();
+boot();
+/* 同行高亮: 点击锁定(事件委托; 只加样式不拦截现有行点击; 排序/翻页/加载更多重渲染后自动失效) */
+document.addEventListener('click', e=>{
+  const tr = e.target.closest('tbody tr');
+  if(!tr) return;
+  const was = tr.classList.contains('hl');
+  tr.parentElement.querySelectorAll('tr.hl').forEach(r=>r.classList.remove('hl'));
+  if(!was) tr.classList.add('hl');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>零售数据实时看板</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1420; color:#dbe4f0; font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif; padding:16px; min-height:100vh; }
+  .nav { display:flex; gap:16px; font-size:13px; margin-bottom:12px; }
+  .nav a { color:#7d8ca3; text-decoration:none; padding:4px 10px; border-radius:6px; border:1px solid #1f2c42; }
+  .nav a.cur { color:#fff; background:#16202f; border-color:#2563eb; }
+  .nav a:hover { color:#dbe4f0; }
+  .auto-sw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:#7d8ca3; flex-wrap:wrap; }
+  .switch { position:relative; width:34px; height:18px; display:inline-block; flex-shrink:0; }
+  .switch input { display:none; }
+  .switch i { position:absolute; inset:0; background:#1f2c42; border-radius:18px; transition:.2s; cursor:pointer; }
+  .switch i::after { content:""; position:absolute; width:14px; height:14px; left:2px; top:2px; background:#7d8ca3; border-radius:50%; transition:.2s; }
+  .switch input:checked + i { background:#059669; }
+  .switch input:checked + i::after { transform:translateX(16px); background:#fff; }
+  .sw-hint { font-size:11px; color:#f59e0b; display:none; }
+  .sw-hint.show { display:inline; }
+  .header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .header-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .header-tools .btn { background:#172338; color:#cfe0f5; border:1px solid #2a3b55; border-radius:8px; padding:7px 11px; font-size:12px; cursor:pointer; }
+  .header-tools .btn:hover { border-color:#60a5fa; color:#fff; }
+  .header-tools .btn:disabled { opacity:.55; cursor:wait; }
+  .data-status { font-size:11px; color:#7d8ca3; min-width:150px; text-align:right; }
+  .data-status.ok { color:#34d399; } .data-status.error { color:#f87171; }
+  .alerts { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .alert { background:#0d1420; border:1px solid #1f2c42; border-left:3px solid #60a5fa; border-radius:8px; padding:10px 12px; min-height:72px; }
+  .alert.warn { border-left-color:#f59e0b; } .alert.bad { border-left-color:#f87171; }
+  .alert .alert-title { color:#7d8ca3; font-size:11px; margin-bottom:4px; }
+  .alert .alert-value { color:#fff; font-size:16px; font-weight:700; }
+  .alert .alert-note { color:#5c6b82; font-size:11px; margin-top:2px; }
+  .header h1 { font-size:19px; font-weight:600; color:#fff; letter-spacing:1px; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#34d399; margin-right:8px; box-shadow:0 0 8px #34d399; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+  .meta { font-size:12px; color:#7d8ca3; }
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+  .kpi { background:linear-gradient(145deg,#16202f,#121a28); border:1px solid #1f2c42; border-radius:12px; padding:12px 14px; }
+  .kpi .label { font-size:12px; color:#7d8ca3; margin-bottom:5px; }
+  .kpi .value { font-size:21px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums; }
+  .kpi .value.small { font-size:18px; }
+  .kpi .sub { font-size:11px; margin-top:3px; color:#5c6b82; }
+  .up { color:#34d399; } .down { color:#f87171; } .accent { color:#60a5fa; }
+  .grid { display:grid; grid-template-columns:2fr 1fr; gap:10px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  .card { background:#121a28; border:1px solid #1f2c42; border-radius:12px; padding:13px 15px; }
+  .card h2 { font-size:14px; font-weight:600; color:#a8b8cc; margin-bottom:10px; }
+  .card h2 .tag { font-size:11px; color:#5c6b82; font-weight:400; margin-left:8px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { text-align:left; color:#5c6b82; font-weight:400; padding:4px 6px; border-bottom:1px solid #1f2c42; }
+  td { padding:5px 6px; border-bottom:1px solid #182234; color:#c4d0e0; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .bar-row { display:flex; align-items:center; gap:8px; margin:7px 0; font-size:12px; }
+  .bar-row .name { width:140px; flex-shrink:0; color:#a8b8cc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bar-row .track { flex:1; height:14px; background:#0d1420; border-radius:4px; overflow:hidden; }
+  .bar-row .fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#2563eb,#60a5fa); }
+  .bar-row .val { width:82px; text-align:right; color:#dbe4f0; font-variant-numeric:tabular-nums; flex-shrink:0; }
+  svg { display:block; width:100%; }
+  .legend { display:flex; flex-wrap:wrap; gap:10px; font-size:11px; color:#7d8ca3; margin-top:8px; }
+  .legend span::before { content:""; display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:4px; background:var(--c); }
+  .foot { margin-top:14px; font-size:11px; color:#43516a; text-align:center; }
+  /* 手机适配 */
+  .industry-kpis { grid-template-columns:repeat(7,1fr) !important; }
+  .cmp-bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px; font-size:12px; color:#7d8ca3; }
+  .cmp-bar label { display:flex; align-items:center; gap:5px; }
+  .cmp-bar input[type=date] { background:#0d1420; color:#dbe4f0; border:1px solid #1f2c42; border-radius:6px; padding:5px 8px; font-size:12px; }
+  .cmp-bar input[type=date]:focus { outline:none; border-color:#2563eb; }
+  .cmp-bar .btn { background:#2563eb; color:#fff; border:none; border-radius:8px; padding:7px 18px; font-size:13px; cursor:pointer; }
+  .cmp-bar .btn:hover { background:#3b82f6; }
+  .cmp-cats { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .cmp-cats .cc { background:#0d1420; border:1px solid #1f2c42; border-radius:8px; padding:6px 10px; font-size:11px; color:#a8b8cc; }
+  .cmp-cats .cc b { color:#fff; font-size:13px; }
+  @media (max-width: 860px) {
+    body { padding:10px; }
+    .kpis { grid-template-columns:repeat(2,1fr); gap:8px; }
+    .industry-kpis { grid-template-columns:repeat(2,1fr) !important; }
+    .cmp-bar label { flex:0 0 calc(50% - 5px); }
+    .cmp-bar input[type=date] { width:100%; }
+    .grid, .row2 { grid-template-columns:1fr; }
+    .kpi .value { font-size:18px; }
+    .bar-row .name { width:110px; }
+    .header h1 { font-size:17px; }
+    .alerts { grid-template-columns:repeat(2,1fr); }
+  }
+  /* 同行高亮: 悬停(浅) + 点击锁定(深一档); !important 覆盖斑马纹/+8/选中行背景; 锁定规则在后, 悬停时仍保持锁定色 */
+  tbody tr:hover td { background:rgba(45,212,191,.12) !important; }
+  tbody tr.hl td { background:rgba(45,212,191,.22) !important; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="index.html" class="cur">零售看板</a>
+  <a href="inventory.html">库存看板</a>
+  <a href="stock.html">库存查询</a>
+  <a href="product.html">商品分析</a>
+  <a href="insights.html">经营分析</a>
+  <a href="target.html">达成看板</a>
+  <a href="demo.html">样机管理</a>
+  <a href="upload.html">手动上传</a>
+  <a href="guide.html">使用指南</a>
+  <span class="auto-sw">自动获取数据 <label class="switch"><input type="checkbox" id="autoRefresh"><i></i></label><span class="sw-hint" id="arHint">已关闭，数据将不再自动更新，可手动上传</span></span>
+</div>
+<div class="header">
+  <h1><span class="dot"></span>零售数据实时看板</h1>
+  <div class="header-tools">
+    <div class="data-status" id="dataStatus">正在连接数据服务…</div>
+    <button class="btn" id="manualRefresh" type="button">↻ 刷新数据</button>
+    <button class="btn" id="exportSummary" type="button">⇩ 导出摘要</button>
+  </div>
+  <div class="meta">数据范围 <span id="range">-</span> ｜ 更新于 <span id="updated">-</span></div>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="grid">
+  <div class="card"><h2>本月每日净销售额趋势<span class="tag">月内累计（万元）</span></h2><div id="trend"></div></div>
+  <div class="card"><h2>品类销售结构<span class="tag">净销售额占比</span></h2><div id="catdonut"></div><div class="legend" id="catlegend"></div></div>
+</div>
+<div class="row2">
+  <div class="card"><h2>门店销售排行 TOP10<span class="tag">净销售额（万元）</span></h2><div id="storebars"></div></div>
+  <div class="card"><h2>单品销售排行 TOP10</h2><table id="prodtable"><thead><tr><th>#</th><th>商品</th><th class="num">销量</th><th class="num">销售额(万)</th></tr></thead><tbody></tbody></table></div>
+</div>
+<div class="row2">
+  <div class="card"><h2>渠道分布<span class="tag">净销售额（万元）</span></h2><div id="chanbars"></div></div>
+  <div class="card"><h2>销售员排行 TOP10<span class="tag">净销售额（万元）</span></h2><div id="staffbars"></div></div>
+</div>
+<div class="card" style="margin-top:10px"><h2>经营分析指标<span class="tag">本月累计</span></h2><div class="kpis industry-kpis" id="industry" style="margin-bottom:0"></div></div>
+<div class="card" style="margin-top:10px"><h2>本月经营提醒<span class="tag">根据当前月度数据自动生成</span></h2><div class="alerts" id="alerts"></div></div>
+<div class="card" style="margin-top:10px"><h2>自定义周期对比<span class="tag">按 日期×门店×大类 立方体计算</span></h2>
+  <div class="cmp-bar">
+    <label>本期起 <input type="date" id="cmpCurStart"></label>
+    <label>本期止 <input type="date" id="cmpCurEnd"></label>
+    <label>对比期起 <input type="date" id="cmpPrevStart"></label>
+    <label>对比期止 <input type="date" id="cmpPrevEnd"></label>
+    <button class="btn" id="cmpRun">对比</button>
+    <span id="cmpLoading" style="font-size:12px;color:#60a5fa;display:none">立方体数据加载中…</span>
+  </div>
+  <div id="cmpResult" style="display:none">
+    <div class="cmp-cats" id="cmpCats"></div>
+    <div style="overflow-x:auto"><table id="cmpTable"><thead><tr>
+      <th>#</th><th>门店</th><th class="num">本期销售额(万)</th><th class="num">对比期销售额(万)</th><th class="num">变化%</th><th class="num">差额(万)</th><th>主要下滑品类</th>
+    </tr></thead><tbody></tbody></table></div>
+    <div style="font-size:11px;color:#43516a;margin-top:8px" id="cmpFoot"></div>
+  </div>
+</div>
+<div class="card" style="margin-top:10px"><h2>月度下滑门店（环比）<span class="tag" id="declineRange">本期 vs 上期</span></h2>
+  <div style="overflow-x:auto"><table id="declinetable"><thead><tr>
+    <th>#</th><th>门店</th><th class="num">本期销售额(万)</th><th class="num">上期销售额(万)</th><th class="num">环比</th><th class="num">差额(万)</th><th>主要下滑品类</th>
+  </tr></thead><tbody></tbody></table></div>
+  <div style="font-size:11px;color:#43516a;margin-top:8px" id="yoyNote"></div>
+</div>
+<div class="foot">数据来源：首茂IPS 零售单（全部门店）｜ 数据每小时更新，页面每分钟自动刷新</div>
+
+<script>
+let DATA = null;
+let LAST_FETCH_AT = null;
+function fmtWan(v){ return (v/10000).toLocaleString('zh-CN',{maximumFractionDigits:1}); }
+function fmtInt(v){ return Math.round(v).toLocaleString('zh-CN'); }
+function fmtPct(a,b){ return b? (Math.abs(a)/Math.abs(b)*100).toFixed(1)+'%' : '-'; }
+const PALETTE = ['#2563eb','#0ea5e9','#14b8a6','#a78bfa','#f59e0b','#f472b6','#94a3b8','#64748b'];
+
+function renderKpis(k){
+  const items = [
+    {label:'净销售额（元）', value:'¥'+fmtInt(k.净销售额), sub:'销售 ¥'+fmtInt(k.销售额), cls:'up'},
+    {label:'销售额（元）', value:'¥'+fmtInt(k.销售额), sub:'日均 ¥'+fmtInt(k.日均销售额), cls:'accent'},
+    {label:'退货额（元）', value:'¥'+fmtInt(k.退货额), sub:'退货率 '+fmtPct(k.退货额,k.销售额), cls:'down'},
+    {label:'客单价（元）', value:'¥'+fmtInt(k.客单价), sub:'订单数 '+fmtInt(k.订单数), cls:'accent'},
+    {label:'销量（件）', value:fmtInt(k.销量), sub:'30天累计', cls:'up', small:true},
+    {label:'订单数（张）', value:fmtInt(k.订单数), sub:'零售单', cls:'accent', small:true},
+    {label:'营业门店（家）', value:fmtInt(k.门店数), sub:'全部门店', cls:'up', small:true},
+    {label:'日均销售额（元）', value:'¥'+fmtInt(k.日均销售额), sub:'近30天', cls:'accent', small:true},
+  ];
+  document.getElementById('kpis').innerHTML = items.map(i=>
+    `<div class="kpi"><div class="label">${i.label}</div><div class="value ${i.small?'small':''} ${i.cls}">${i.value}</div><div class="sub">${i.sub}</div></div>`).join('');
+}
+function renderTrend(t){
+  const el = document.getElementById('trend');
+  if(!t || !Array.isArray(t.销售额) || !t.销售额.length){ el.textContent='暂无趋势数据'; return; }
+  const W=760,H=240,P={l:44,r:8,t:12,b:26};
+  const vals=t.销售额.map(v=>v/10000), dates=t.dates;
+  const max=Math.max(...vals)*1.1, n=vals.length;
+  const x=i=>P.l+(W-P.l-P.r)*i/Math.max(1,n-1), y=v=>P.t+(H-P.t-P.b)*(1-v/(max||1));
+  let path='', area='';
+  vals.forEach((v,i)=>{ const px=x(i).toFixed(1),py=y(v).toFixed(1); path+=(i?'L':'M')+px+','+py; area+=(i?'L':'M')+px+','+py; });
+  area+=`L${x(n-1)},${y(0)}L${x(0)},${y(0)}Z`;
+  let grid='';
+  for(let g=0;g<=4;g++){ const gv=max*g/4, gy=y(gv); grid+=`<line x1="${P.l}" y1="${gy}" x2="${W-P.r}" y2="${gy}" stroke="#1f2c42" stroke-width="1"/><text x="${P.l-6}" y="${gy+3}" fill="#5c6b82" font-size="9" text-anchor="end">${gv.toFixed(0)}</text>`; }
+  let ticks='';
+  dates.forEach((d,i)=>{ if(i%5===0||i===n-1) ticks+=`<text x="${x(i)}" y="${H-8}" fill="#5c6b82" font-size="9" text-anchor="middle">${d}</text>`; });
+  const li=vals.length-1;
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}">${grid}
+    <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2563eb" stop-opacity=".45"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/></linearGradient></defs>
+    <path d="${area}" fill="url(#ag)"/><path d="${path}" fill="none" stroke="#60a5fa" stroke-width="2"/>
+    <circle cx="${x(li)}" cy="${y(vals[li])}" r="3.5" fill="#60a5fa"/><text x="${x(li)-4}" y="${y(vals[li])-8}" fill="#93c5fd" font-size="10" text-anchor="end">${vals[li].toFixed(1)}</text>
+    ${ticks}</svg>`;
+}
+function renderBars(elId, names, vals, color){
+  if(!Array.isArray(names)||!names.length){ document.getElementById(elId).textContent='暂无数据'; return; }
+  const max=Math.max(...vals.map(Math.abs))||1;
+  document.getElementById(elId).innerHTML = names.map((n,i)=>
+    `<div class="bar-row"><div class="name" title="${n}">${i+1}. ${n}</div><div class="track"><div class="fill" style="width:${(Math.abs(vals[i])/max*100).toFixed(1)}%;${color?'background:'+color:''}"></div></div><div class="val">${fmtWan(vals[i])}</div></div>`).join('');
+}
+function renderDonut(c){
+  if(!c || !Array.isArray(c.销售额)){ document.getElementById('catdonut').textContent='暂无品类数据'; return; }
+  const total=c.销售额.reduce((a,b)=>a+Math.max(b,0),0);
+  if(total<=0){ document.getElementById('catdonut').textContent='暂无有效销售额'; document.getElementById('catlegend').innerHTML=''; return; }
+  const W=240,H=200,cx=110,cy=100,R=72,r=44;
+  let angle=-Math.PI/2, paths='';
+  c.销售额.forEach((v,i)=>{
+    if(v<=0) return;
+    const frac=v/total, a2=angle+frac*Math.PI*2;
+    const large=frac>0.5?1:0;
+    const x1=cx+R*Math.cos(angle),y1=cy+R*Math.sin(angle),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+    const x3=cx+r*Math.cos(a2),y3=cy+r*Math.sin(a2),x4=cx+r*Math.cos(angle),y4=cy+r*Math.sin(angle);
+    paths+=`<path d="M${x1},${y1} A${R},${R} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${r},${r} 0 ${large} 0 ${x4},${y4}Z" fill="${PALETTE[i%PALETTE.length]}"/>`;
+    angle=a2;
+  });
+  document.getElementById('catdonut').innerHTML=`<svg viewBox="0 0 ${W} ${H}">${paths}<text x="${cx}" y="${cy-4}" fill="#7d8ca3" font-size="10" text-anchor="middle">手机占比</text><text x="${cx}" y="${cy+14}" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">${(c.销售额[0]/total*100).toFixed(1)}%</text></svg>`;
+  document.getElementById('catlegend').innerHTML=c.names.map((n,i)=> n&&c.销售额[i]>0?`<span style="--c:${PALETTE[i%PALETTE.length]}">${n} ${(c.销售额[i]/total*100).toFixed(1)}%</span>`:'').join('');
+}
+function renderProd(p){
+  document.querySelector('#prodtable tbody').innerHTML=p.names.map((n,i)=>`<tr><td>${i+1}</td><td title="${n}">${n.length>26?n.slice(0,26)+'…':n}</td><td class="num">${fmtInt(p.销量[i])}</td><td class="num">${fmtWan(p.销售额[i])}</td></tr>`).join('');
+}
+function renderIndustry(m){
+  if(!m) return;
+  const mom = m.月环比;
+  const items = [
+    {label:'客单价（元）', value:'¥'+fmtInt(m.客单价), sub:'净销售额/订单数', cls:'accent'},
+    {label:'件单价（元）', value:'¥'+fmtInt(m.件单价), sub:'净销售额/销量', cls:'accent'},
+    {label:'连带率', value:m.连带率, sub:'销量/订单数', cls:'up'},
+    {label:'退货率', value:m.退货率+'%', sub:'|退货额|/销售额', cls:'down'},
+    {label:'TOP5门店集中度', value:m.TOP5门店集中度+'%', sub:'头部聚集度', cls:'accent'},
+    {label:'门店日均产出（元）', value:'¥'+fmtInt(m.门店日均产出), sub:'净销售额/门店/本月天数', cls:'up'},
+    {label:'月环比', value:(mom==null?'-':(mom>0?'+':'')+mom+'%'), sub:'本期净销售额 vs 上期', cls:(mom==null?'accent':(mom<0?'down':'up'))},
+  ];
+  document.getElementById('industry').innerHTML = items.map(i=>
+    `<div class="kpi"><div class="label">${i.label}</div><div class="value small ${i.cls}">${i.value}</div><div class="sub">${i.sub}</div></div>`).join('');
+}
+function renderDecline(dc){
+  if(!dc) return;
+  document.getElementById('declineRange').textContent = `本期 ${dc.本期} ｜ 上期 ${dc.上期}`;
+  document.getElementById('yoyNote').textContent = dc.同比说明||'';
+  const FIVE=['手机','穿戴','平板','电脑','音频'];
+  document.querySelector('#declinetable tbody').innerHTML = (dc.stores||[]).map((s,i)=>{
+    let worst=null;
+    FIVE.forEach(c=>{
+      const k=s.cats&&s.cats[c];
+      if(k&&k.环比!=null&&k.环比<0&&(!worst||(k.本期-k.上期)<worst.diff)) worst={cat:c,rate:k.环比,diff:k.本期-k.上期};
+    });
+    const wc = worst? `${worst.cat} ${worst.rate}%` : '-';
+    return `<tr><td>${i+1}</td><td>${s.store}</td><td class="num">${fmtWan(s.本期)}</td><td class="num">${fmtWan(s.上期)}</td><td class="num down">${s.环比}%</td><td class="num down">${fmtWan(s.差额)}</td><td>${wc}</td></tr>`;
+  }).join('') || '<tr><td colspan="7">本期无下滑门店</td></tr>';
+}
+function renderAlerts(d){
+  const el=document.getElementById('alerts');
+  if(!el) return;
+  const mom=d.industry&&d.industry.月环比;
+  const decline=(d.decline&&d.decline.stores)||[];
+  const declineTotal=d.decline&&d.decline.总数!=null?d.decline.总数:decline.length;
+  const topShare=d.industry&&d.industry.TOP5门店集中度;
+  const ret=d.industry&&d.industry.退货率;
+  const items=[
+    {title:'月环比',value:mom==null?'-':(mom>0?'+':'')+mom+'%',note:mom==null?'暂无上月同期基数':(mom<0?'本月销售额低于上月':'本月销售额高于上月'),cls:mom!=null&&mom<0?'bad':''},
+    {title:'下滑门店',value:declineTotal+' 家',note:declineTotal?`表格展示下滑最严重的 ${decline.length} 家`:'当前没有识别到下滑门店',cls:declineTotal?'warn':''},
+    {title:'退货率',value:ret==null?'-':ret+'%',note:'按本月销售额计算',cls:ret>5?'warn':''},
+    {title:'TOP5门店集中度',value:topShare==null?'-':topShare+'%',note:'观察头部门店依赖度',cls:topShare>70?'warn':''}
+  ];
+  el.innerHTML=items.map(i=>`<div class="alert ${i.cls}"><div class="alert-title">${i.title}</div><div class="alert-value">${i.value}</div><div class="alert-note">${i.note}</div></div>`).join('');
+}
+function renderDashboard(d){
+  if(!d||!d.kpi) return;
+  DATA=d;
+  document.getElementById('range').textContent=d.range||'-';
+  document.getElementById('updated').textContent=d.updatedAt||'-';
+  renderKpis(d.kpi); renderTrend(d.trend); renderDonut(d.category);
+  renderBars('storebars',d.store.names,d.store.销售额);
+  renderProd(d.product);
+  renderBars('chanbars',d.channel.names,d.channel.销售额,'linear-gradient(90deg,#0d9488,#2dd4bf)');
+  renderBars('staffbars',d.staff.names,d.staff.销售额,'linear-gradient(90deg,#7c3aed,#a78bfa)');
+  renderIndustry(d.industry);
+  renderAlerts(d);
+  renderDecline(d.decline);
+}
+/* 每分钟拉取最新数据 */
+let LAST_UPD = null;
+function setDataStatus(text, kind=''){
+  const el=document.getElementById('dataStatus');
+  if(!el) return;
+  el.textContent=text;
+  el.className='data-status'+(kind?' '+kind:'');
+}
+async function refresh(options={}){
+  const manual=!!options.manual;
+  const button=document.getElementById('manualRefresh');
+  if(manual && button) button.disabled=true;
+  setDataStatus(manual?'正在刷新数据…':'正在检查数据…');
+  try{
+    const r = await fetch('data.json?_='+Date.now(), {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    { const d = await r.json();
+      if(!d || !d.kpi) throw new Error('数据文件格式不完整');
+      // 数据未更新则跳过重渲染，避免每分钟全量重建DOM
+      if(d.updatedAt && d.updatedAt===LAST_UPD){
+        setDataStatus('数据正常 · '+(d.updatedAt||'未标记'),'ok');
+        return;
+      }
+      LAST_UPD = (d && d.updatedAt) || LAST_UPD;
+      renderDashboard(d);
+      LAST_FETCH_AT = new Date();
+      setDataStatus('数据已更新 · '+(d.updatedAt||'当前'),'ok');
+    }
+  }catch(e){
+    setDataStatus('数据服务不可用 · '+e.message,'error');
+    if(manual) alert('刷新失败：'+e.message+'。请检查自动取数服务或稍后重试。');
+  } finally {
+    if(manual && button) button.disabled=false;
+  }
+}
+refresh();
+setInterval(()=>refresh(), 60000);
+
+function exportSummary(){
+  if(!DATA || !DATA.kpi){ alert('当前没有可导出的数据。'); return; }
+  const k=DATA.kpi;
+  const rows=[
+    ['指标','数值'],
+    ['数据范围',DATA.range||'-'],
+    ['更新时间',DATA.updatedAt||'-'],
+    ['净销售额（元）',k.净销售额||0],
+    ['销售额（元）',k.销售额||0],
+    ['退货额（元）',k.退货额||0],
+    ['销量（件）',k.销量||0],
+    ['订单数（单）',k.订单数||0],
+    ['门店数（家）',k.门店数||0],
+    ['客单价（元）',k.客单价||0]
+  ];
+  const csv='\\ufeff'+rows.map(row=>row.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\\n');
+  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a'); a.href=url; a.download=`零售看板摘要_${(DATA.updatedAt||'未标记').replace(/[ :]/g,'-')}.csv`; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+document.getElementById('manualRefresh').addEventListener('click',()=>refresh({manual:true}));
+document.getElementById('exportSummary').addEventListener('click',exportSummary);
+
+/* ---------- 自定义周期对比（dailycube.json 纯前端计算） ---------- */
+let CUBE=null;
+function cubeRangeSum(a,b){
+  // 返回 {perStore:[[amt]*cats], perCat:[...], total}
+  const nS=CUBE.stores.length, nC=CUBE.cats.length;
+  const perStore=Array.from({length:nS},()=>new Array(nC).fill(0));
+  const perCat=new Array(nC).fill(0);
+  CUBE.dates.forEach((d,di)=>{
+    if(d<a||d>b) return;
+    for(let si=0;si<nS;si++) for(let ci=0;ci<nC;ci++){
+      const amt=CUBE.v[di][si][ci];
+      if(amt){ perStore[si][ci]+=amt; perCat[ci]+=amt; }
+    }
+  });
+  return {perStore, perCat};
+}
+function fmtRate(cur,prev){
+  if(prev===0) return cur>0?'新增':'-';
+  const r=(cur-prev)/Math.abs(prev)*100;
+  return (r>0?'+':'')+r.toFixed(1)+'%';
+}
+function runCompare(){
+  if(!CUBE) return;
+  const cs=document.getElementById('cmpCurStart').value, ce=document.getElementById('cmpCurEnd').value;
+  const ps=document.getElementById('cmpPrevStart').value, pe=document.getElementById('cmpPrevEnd').value;
+  if(!cs||!ce||!ps||!pe){ alert('请选择完整的对比日期'); return; }
+  const cur=cubeRangeSum(cs,ce), prev=cubeRangeSum(ps,pe);
+  document.getElementById('cmpCats').innerHTML = CUBE.cats.map((c,ci)=>{
+    const rate = prev.perCat[ci]===0 ? (cur.perCat[ci]>0?'新增':'-')
+      : ((cur.perCat[ci]-prev.perCat[ci])/Math.abs(prev.perCat[ci])*100).toFixed(1)+'%';
+    const neg = prev.perCat[ci]!==0 && cur.perCat[ci]<prev.perCat[ci];
+    return `<div class="cc">${c}<br><b>${fmtWan(cur.perCat[ci])}</b> 万 vs ${fmtWan(prev.perCat[ci])} 万 <span class="${neg?'down':'up'}">${rate}</span></div>`;
+  }).join('');
+  const rows=[];
+  CUBE.stores.forEach((s,si)=>{
+    const cTot=cur.perStore[si].reduce((a,b)=>a+b,0), pTot=prev.perStore[si].reduce((a,b)=>a+b,0);
+    const diff=cTot-pTot;
+    let worst=null;
+    CUBE.cats.forEach((c,ci)=>{
+      const d=cur.perStore[si][ci]-prev.perStore[si][ci];
+      if(d<0&&prev.perStore[si][ci]>0&&(!worst||d<worst.d))
+        worst={c, d, rate:(cur.perStore[si][ci]-prev.perStore[si][ci])/Math.abs(prev.perStore[si][ci])*100};
+    });
+    rows.push({s,cTot,pTot,diff,worst});
+  });
+  const declines = rows.filter(r=>r.diff<0).sort((a,b)=>a.diff-b.diff);
+  document.querySelector('#cmpTable tbody').innerHTML = declines.map((r,i)=>{
+    let rateCell;
+    if(r.pTot===0) rateCell = `<td class="num up">新增</td>`;
+    else { const rt=(r.diff)/Math.abs(r.pTot)*100; rateCell=`<td class="num ${rt<0?'down':'up'}">${rt.toFixed(1)}%</td>`; }
+    const wc = r.worst? `${r.worst.c} ${r.worst.rate.toFixed(1)}%` : '-';
+    return `<tr><td>${i+1}</td><td>${r.s}</td><td class="num">${fmtWan(r.cTot)}</td><td class="num">${fmtWan(r.pTot)}</td>${rateCell}<td class="num down">${fmtWan(r.diff)}</td><td>${wc}</td></tr>`;
+  }).join('') || '<tr><td colspan="7">本期无下滑门店</td></tr>';
+  document.getElementById('cmpFoot').textContent = `仅显示下滑 ${declines.length} 家 / 共 ${rows.length} 家`;
+  document.getElementById('cmpResult').style.display='block';
+}
+async function initCompare(){
+  document.getElementById('cmpLoading').style.display='inline';
+  try{
+    const r = await fetch('dailycube.json?_='+Date.now(), {cache:'no-store'});
+    if(r.ok) CUBE = await r.json();
+  }catch(e){}
+  document.getElementById('cmpLoading').style.display='none';
+  if(!CUBE){ document.getElementById('cmpLoading').style.display='inline'; document.getElementById('cmpLoading').textContent='dailycube.json 加载失败'; return; }
+  const maxD = CUBE.dates[CUBE.dates.length-1];
+  const day = 24*3600*1000;
+  const dEnd = new Date(maxD+'T00:00:00');
+  const iso = dt=>dt.toISOString().slice(0,10);
+  document.getElementById('cmpCurEnd').value = maxD;
+  const curStart = new Date(dEnd.getFullYear(),dEnd.getMonth(),1);
+  const prevStart = new Date(dEnd.getFullYear(),dEnd.getMonth()-1,1);
+  const elapsed = dEnd.getDate();
+  const prevEnd = new Date(prevStart.getFullYear(),prevStart.getMonth(),Math.min(elapsed,new Date(prevStart.getFullYear(),prevStart.getMonth()+1,0).getDate()));
+  document.getElementById('cmpCurStart').value = iso(curStart);
+  document.getElementById('cmpPrevEnd').value = iso(prevEnd);
+  document.getElementById('cmpPrevStart').value = iso(prevStart);
+  document.getElementById('cmpRun').addEventListener('click', runCompare);
+  runCompare();
+}
+initCompare();
+window.addEventListener('resize', ()=>{ if(DATA) renderDashboard(DATA); });
+/* 自动获取数据总开关 */
+async function initAutoRefresh(){
+  const cb = document.getElementById('autoRefresh');
+  const hint = document.getElementById('arHint');
+  if(!cb) return;
+  const sync = ()=>hint.classList.toggle('show', !cb.checked);
+  try{
+    const r = await fetch('/api/auto-refresh', {cache:'no-store'});
+    if(r.ok){ const d = await r.json(); cb.checked = !!d.enabled; }
+  }catch(e){ /* 接口不可用时保持默认开 */ }
+  sync();
+  cb.addEventListener('change', async ()=>{
+    const want = cb.checked;
+    try{
+      const r = await fetch('/api/auto-refresh', {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({enabled:want})});
+      const d = await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || ('HTTP '+r.status));
+      cb.checked = !!d.enabled;
+    }catch(e){
+      cb.checked = !want;
+      alert('设置失败：'+e.message);
+    }
+    sync();
+  });
+}
+initAutoRefresh();
+
+/* 同行高亮: 点击锁定(事件委托; 只加样式不拦截现有行点击; 排序/翻页/加载更多重渲染后自动失效) */
+document.addEventListener('click', e=>{
+  const tr = e.target.closest('tbody tr');
+  if(!tr) return;
+  const was = tr.classList.contains('hl');
+  tr.parentElement.querySelectorAll('tr.hl').forEach(r=>r.classList.remove('hl'));
+  if(!was) tr.classList.add('hl');
+});
+</script>
+</body>
+</html>

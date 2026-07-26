@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>库存数据实时看板</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1420; color:#dbe4f0; font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif; padding:16px; min-height:100vh; }
+  .nav { display:flex; gap:16px; font-size:13px; margin-bottom:12px; }
+  .nav a { color:#7d8ca3; text-decoration:none; padding:4px 10px; border-radius:6px; border:1px solid #1f2c42; }
+  .nav a.cur { color:#fff; background:#16202f; border-color:#2563eb; }
+  .nav a:hover { color:#dbe4f0; }
+  .auto-sw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:#7d8ca3; flex-wrap:wrap; }
+  .switch { position:relative; width:34px; height:18px; display:inline-block; flex-shrink:0; }
+  .switch input { display:none; }
+  .switch i { position:absolute; inset:0; background:#1f2c42; border-radius:18px; transition:.2s; cursor:pointer; }
+  .switch i::after { content:""; position:absolute; width:14px; height:14px; left:2px; top:2px; background:#7d8ca3; border-radius:50%; transition:.2s; }
+  .switch input:checked + i { background:#059669; }
+  .switch input:checked + i::after { transform:translateX(16px); background:#fff; }
+  .sw-hint { font-size:11px; color:#f59e0b; display:none; }
+  .sw-hint.show { display:inline; }
+  .wk-summary { font-size:12px; color:#7d8ca3; margin-bottom:10px; line-height:1.6; }
+  .wk-summary b { color:#f59e0b; }
+  .replen { color:#f59e0b; font-weight:700; }
+  .p8 { color:#f59e0b; font-weight:700; }
+  tr.p8row td { background:rgba(245,158,11,.05); }
+  .ph1, .ph2 { display:inline-block; margin-left:4px; padding:0 5px; border-radius:4px; font-size:11px; font-weight:400; line-height:16px; vertical-align:1px; }
+  .ph1 { color:#34d399; background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.4); }
+  .ph2 { color:#60a5fa; background:rgba(96,165,250,.12); border:1px solid rgba(96,165,250,.4); }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .filters button { background:#121a28; color:#7d8ca3; border:1px solid #1f2c42; border-radius:16px; padding:5px 14px; font-size:12px; cursor:pointer; }
+  .filters button:hover { color:#dbe4f0; }
+  .filters button.cur { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .header h1 { font-size:19px; font-weight:600; color:#fff; letter-spacing:1px; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#34d399; margin-right:8px; box-shadow:0 0 8px #34d399; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+  .meta { font-size:12px; color:#7d8ca3; }
+  .kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:14px; }
+  .kpi { background:linear-gradient(145deg,#16202f,#121a28); border:1px solid #1f2c42; border-radius:12px; padding:12px 14px; }
+  .kpi .label { font-size:12px; color:#7d8ca3; margin-bottom:5px; }
+  .kpi .value { font-size:20px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums; }
+  .kpi .sub { font-size:11px; margin-top:3px; color:#5c6b82; }
+  .hq-bar { display:flex; align-items:center; gap:8px; margin:4px 0; font-size:12px; }
+  .hq-bar .hb-l { width:60px; color:#a8b8cc; flex-shrink:0; }
+  .hq-bar .hb-t { flex:1; height:10px; background:#182234; border-radius:5px; overflow:hidden; }
+  .hq-bar .hb-f { height:100%; background:#2563eb; border-radius:5px; }
+  .hq-bar .hb-v { width:90px; text-align:right; color:#c4d0e0; font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .up { color:#34d399; } .down { color:#f87171; } .accent { color:#60a5fa; } .warn { color:#f59e0b; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  .card { background:#121a28; border:1px solid #1f2c42; border-radius:12px; padding:13px 15px; margin-top:10px; }
+  .grid2 .card { margin-top:0; }
+  .card h2 { font-size:14px; font-weight:600; color:#a8b8cc; margin-bottom:10px; display:flex; align-items:center; }
+  .card h2 .tag { font-size:11px; color:#5c6b82; font-weight:400; margin-left:8px; flex:1; }
+  .card.hot { border-color:#7c3aed; box-shadow:0 0 14px rgba(124,58,237,.25); }
+  .exp-btn { background:#16202f; border:1px solid #1f2c42; color:#7d8ca3; font-size:11px; border-radius:6px; padding:3px 10px; cursor:pointer; text-decoration:none; white-space:nowrap; }
+  .exp-btn:hover { color:#fff; border-color:#2563eb; }
+  .tscroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:12px; min-width:560px; }
+  th { text-align:left; color:#5c6b82; font-weight:400; padding:4px 6px; border-bottom:1px solid #1f2c42; white-space:nowrap; }
+  td { padding:5px 6px; border-bottom:1px solid #182234; color:#c4d0e0; vertical-align:top; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  /* 商品名称列：不截断，允许换行显示全名 */
+  td.pname { white-space:normal; word-break:break-word; min-width:220px; max-width:340px; line-height:1.5; }
+  .qty { color:#f59e0b; font-weight:700; }
+  .zero { color:#f87171; font-weight:700; }
+  .ratebar { display:inline-block; width:110px; height:10px; background:#0d1420; border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:8px; }
+  .ratebar i { display:block; height:100%; background:linear-gradient(90deg,#2563eb,#60a5fa); }
+  .ratebar.low i { background:linear-gradient(90deg,#b91c1c,#f87171); }
+  .ratebar.mid i { background:linear-gradient(90deg,#b45309,#f59e0b); }
+  tr.clickable { cursor:pointer; }
+  tr.clickable:hover td { background:#16202f; }
+  tr.sublist td { background:#0d1420; color:#7d8ca3; font-size:11px; padding:8px 12px; white-space:normal; word-break:break-word; }
+  .bar-row { display:flex; align-items:center; gap:8px; margin:7px 0; font-size:12px; }
+  .bar-row .name { width:150px; flex-shrink:0; color:#a8b8cc; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bar-row .track { flex:1; height:14px; background:#0d1420; border-radius:4px; overflow:hidden; }
+  .bar-row .fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#0d9488,#2dd4bf); }
+  .bar-row .val { width:130px; text-align:right; color:#dbe4f0; font-variant-numeric:tabular-nums; flex-shrink:0; font-size:11px; }
+  /* 货源查询卡片 */
+  .src-sel { background:#16202f; border:1px solid #1f2c42; color:#dbe4f0; font-size:12px;
+    border-radius:6px; padding:5px 8px; max-width:300px; }
+  .src-sel:focus { outline:none; border-color:#2563eb; }
+  /* SPU 可搜索下拉（避免一次性渲染数百个 option 造成卡顿） */
+  .src-combo { position:relative; display:inline-block; }
+  .src-combo-input { width:300px; }
+  .src-combo-list { position:absolute; top:calc(100% + 2px); left:0; z-index:60; width:380px;
+    max-width:80vw; max-height:300px; overflow-y:auto; background:#16202f; border:1px solid #1f2c42;
+    border-radius:6px; box-shadow:0 10px 28px rgba(0,0,0,.55); }
+  .src-combo-item { padding:6px 10px; font-size:12px; color:#dbe4f0; cursor:pointer;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .src-combo-item:hover, .src-combo-item.cur { background:#1f2c42; }
+  .src-combo-item .cnt { color:#5c6b82; margin-left:6px; font-size:11px; }
+  .src-combo-more { padding:6px 10px; font-size:11px; color:#5c6b82; text-align:center; }
+  .src-chans { display:flex; gap:18px; flex-wrap:wrap; margin:4px 0 10px; }
+  .src-chan-col { flex:1; min-width:260px; }
+  .src-chan-title { font-size:12px; color:#7d8ca3; margin-bottom:4px; }
+  #sourcing th.sortable { cursor:pointer; user-select:none; }
+  #sourcing th.sortable:hover { color:#2dd4bf; }
+  .foot { margin-top:14px; font-size:11px; color:#43516a; text-align:center; }
+  @media (max-width: 860px) {
+    body { padding:10px; }
+    .kpis { grid-template-columns:repeat(2,1fr); gap:8px; }
+    .grid2 { grid-template-columns:1fr; }
+    .kpi .value { font-size:17px; }
+    .bar-row .name { width:110px; }
+    .header h1 { font-size:17px; }
+    td.pname { min-width:160px; }
+  }
+  /* 同行高亮: 悬停(浅) + 点击锁定(深一档); !important 覆盖斑马纹/+8/选中行背景; 锁定规则在后, 悬停时仍保持锁定色 */
+  tbody tr:hover td { background:rgba(45,212,191,.12) !important; }
+  tbody tr.hl td { background:rgba(45,212,191,.22) !important; }
+</style>
+</head>
+<body>
+<div class="nav">
+  <a href="index.html">零售看板</a>
+  <a href="inventory.html" class="cur">库存看板</a>
+  <a href="stock.html">库存查询</a>
+  <a href="product.html">商品分析</a>
+  <a href="insights.html">经营分析</a>
+  <a href="target.html">达成看板</a>
+  <a href="upload.html">手动上传</a>
+  <a href="guide.html">使用指南</a>
+  <span class="auto-sw">自动获取数据 <label class="switch"><input type="checkbox" id="autoRefresh"><i></i></label><span class="sw-hint" id="arHint">已关闭，数据将不再自动更新，可手动上传</span></span>
+</div>
+<div class="header">
+  <h1><span class="dot"></span>库存数据实时看板</h1>
+  <div class="meta">数据快照时间 <span id="snapshot">-</span> ｜ 销量口径 <span id="salesrange">-</span></div>
+</div>
+<div class="filters" id="filters"></div>
+<div class="kpis" id="kpis"></div>
+<div class="card" id="hqCard" style="display:none;margin-top:10px">
+  <h2>总部库存<span class="tag">渠道仓/可售仓 · 可用/自有品 ｜ 不含在途与样品</span></h2>
+  <div id="hqOrgs" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px"></div>
+  <div id="hqCats"></div>
+</div>
+
+<div class="card" id="srcCard">
+  <h2>货源查询<span class="tag">按大类/SPU查看门店×SKU库存与渠道分布</span><a class="exp-btn" id="srcExport" href="#">导出Excel</a></h2>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+    <select class="src-sel" id="srcCat"><option>全部大类</option></select>
+    <span class="src-combo" id="srcSpuCombo">
+      <input type="text" class="src-sel src-combo-input" id="srcSpuInput"
+             placeholder="全部SPU（点击展开，输入筛选）" autocomplete="off">
+      <div class="src-combo-list" id="srcSpuList" style="display:none"></div>
+    </span>
+    <span style="font-size:12px;color:#7d8ca3" id="srcSummary"></span>
+  </div>
+  <div class="src-chans">
+    <div class="src-chan-col"><div class="src-chan-title">门店渠道分布（按库存件数）</div><div id="srcChanStore"></div></div>
+    <div class="src-chan-col"><div class="src-chan-title">总部渠道分布（按库存件数）</div><div id="srcChanHq"></div></div>
+  </div>
+  <div class="tscroll"><table id="sourcing"><thead><tr>
+    <th class="sortable" data-k="store">门店</th><th class="sortable" data-k="storeType">门店类型</th>
+    <th class="sortable" data-k="sku">SKU</th><th>物料名称</th>
+    <th class="sortable num" data-k="stock">库存量</th><th class="sortable num" data-k="sold28">近4周销量</th>
+  </tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="card hot"><h2>周末调拨建议<span class="tag">仅限同类型门店之间调拨，保留3台安全库存</span><a class="exp-btn" data-table="transfer" href="#">导出Excel</a></h2>
+  <div class="tscroll"><table id="transfer"><thead><tr>
+    <th>#</th><th>SKU</th><th>商品</th><th>调出店</th><th>调入店</th><th class="num">调拨数量</th><th class="num">调入店周末需求</th><th class="num">调入店现库存</th><th class="num">调出方库存</th><th class="num">调出方DOS</th><th class="num">调入方DOS</th>
+  </tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="card"><h2>周度缺货补货明细（五大类）<span class="tag">补足到一周销量所需数量，按近4周销量计算</span><a class="exp-btn" data-table="weekly" href="#">导出Excel</a></h2>
+  <div class="wk-summary" id="wkSummary"></div>
+  <div class="tscroll"><table id="weekly"><thead><tr>
+    <th>#</th><th>门店</th><th>商品名称</th><th>大类</th><th class="num">当前可售库存</th><th class="num">近4周销量</th><th class="num">应补货数量</th>
+  </tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="card"><h2>总部分货<span class="tag" id="allocTag">以仓库为第一前提分货</span><a class="exp-btn" data-table="allocate" href="#">导出Excel</a></h2>
+  <div class="filters" id="allocWhTabs" style="margin-bottom:6px"></div>
+  <div class="filters" id="allocVerTabs" style="margin-bottom:10px"></div>
+  <div class="wk-summary" id="allocSummary"></div>
+  <div class="tscroll"><table id="allocate"><thead><tr>
+    <th>#</th><th>物料编码</th><th>物料名称</th><th>大类</th><th>渠道</th><th>分货门店</th><th class="num">分货数量</th><th class="num">门店现库存</th><th class="num">近4周销量</th>
+  </tr></thead><tbody></tbody></table></div>
+  <div id="allocUnd"></div>
+</div>
+
+<div class="grid2">
+  <div class="card"><h2>缺货预警<span class="tag">可售=0 且 近30天销量≥2</span><a class="exp-btn" data-table="shortage" href="#">导出Excel</a></h2>
+    <div class="tscroll"><table id="shortage"><thead><tr><th>#</th><th>门店</th><th>商品</th><th class="num">近30天销量</th><th class="num">当前库存</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card"><h2>紧缺预警<span class="tag">可售天数&lt;3 且 近30天销量≥3</span><a class="exp-btn" data-table="tight" href="#">导出Excel</a></h2>
+    <div class="tscroll"><table id="tight"><thead><tr><th>#</th><th>门店</th><th>商品</th><th class="num">库存</th><th class="num">近30天销量</th><th class="num">可售天数</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+<div class="card"><h2>重点手机 SKU 覆盖达标<span class="tag">达标=门店可售库存≥3台；点击行展开未达标门店</span><a class="exp-btn" data-table="coverage" href="#">导出Excel</a></h2>
+  <div class="tscroll"><table id="coverage"><thead><tr><th>#</th><th>商品</th><th>达标率</th><th class="num">达标/应覆盖</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="grid2">
+  <div class="card"><h2>慢周转（滞销）预警<span class="tag">可售天数&gt;60 且 库存≥5</span><a class="exp-btn" data-table="turnover" href="#">导出Excel</a></h2>
+    <div class="tscroll"><table id="turnover"><thead><tr><th>#</th><th>门店</th><th>商品</th><th class="num">库存</th><th class="num">近30天销量</th><th class="num">可售天数</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <div class="card"><h2>门店库存概览<span class="tag">可售库存件数 ｜ 可售天数（不随大类筛选）</span></h2><div id="storebars"></div></div>
+</div>
+
+<div class="foot">数据来源：首茂IPS 即时库存 + 零售单 ｜ 页面每分钟自动刷新</div>
+
+<script>
+let DATA = null;
+let CAT = '全部';
+const CATS = ['全部','手机','穿戴','平板','电脑','音频','智慧屏','IOT','配件','其他'];
+const OTHER_SET = ['服务','礼品','其他'];
+function fmtInt(v){ return v==null?'-':Math.round(v).toLocaleString('zh-CN'); }
+function fmtDays(v){ return v==null?'∞':v.toLocaleString('zh-CN',{maximumFractionDigits:1}); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+/* 大表性能: 首屏最多渲染 ROW_CAP 行, 点击"加载更多"展开; 展开状态按表记忆 */
+const ROW_CAP = 100;
+const EXPANDED = {};
+function capped(tbody, id, list, colspan, emptyText, rowFn){
+  const n = list.length;
+  const show = EXPANDED[id] ? n : Math.min(n, ROW_CAP);
+  let html = '';
+  for(let i=0;i<show;i++) html += rowFn(list[i], i);
+  if(!n) html = `<tr><td colspan="${colspan}">${emptyText}</td></tr>`;
+  else if(show<n) html += `<tr class="clickable more-row"><td colspan="${colspan}" style="text-align:center;color:#60a5fa;cursor:pointer">仅显示前 ${show} 行（共 ${n} 行）— 点击加载全部</td></tr>`;
+  tbody.innerHTML = html;
+  const mr = tbody.querySelector('.more-row');
+  if(mr) mr.addEventListener('click', ()=>{ EXPANDED[id]=true; if(DATA) renderDashboard(DATA); });
+}
+function catMatch(r){
+  if(CAT==='全部') return true;
+  if(CAT==='其他') return OTHER_SET.includes(r.cat);
+  return r.cat===CAT;
+}
+
+function renderFilters(){
+  document.getElementById('filters').innerHTML = CATS.map(c=>
+    `<button class="${c===CAT?'cur':''}" data-cat="${c}">${c}</button>`).join('');
+  document.querySelectorAll('#filters button').forEach(b=>b.addEventListener('click',()=>{
+    CAT = b.dataset.cat;
+    renderFilters();
+    if(DATA) renderDashboard(DATA);
+  }));
+}
+function renderKpis(k){
+  const items = [
+    {label:'总可售库存（件）', value:fmtInt(k.总可售库存), sub:'可售仓·可用/自有品', cls:'accent'},
+    {label:'覆盖门店数（家）', value:fmtInt(k.覆盖门店数), sub:'有可售库存的门店', cls:'up'},
+    {label:'在库SKU数', value:fmtInt(k.在库SKU数), sub:'可售库存>0', cls:'accent'},
+    {label:'缺货预警（条）', value:fmtInt(k.缺货预警数), sub:'可售=0 有销量', cls:'down'},
+    {label:'紧缺预警（条）', value:fmtInt(k.紧缺预警数), sub:'可售天数<3', cls:'warn'},
+    {label:'覆盖达标率', value:k.覆盖达标率+'%', sub:'重点手机SKU ≥3台', cls:(k.覆盖达标率>=80?'up':(k.覆盖达标率>=50?'warn':'down'))},
+  ];
+  document.getElementById('kpis').innerHTML = items.map(i=>
+    `<div class="kpi"><div class="label">${i.label}</div><div class="value ${i.cls}">${i.value}</div><div class="sub">${i.sub}</div></div>`).join('');
+}
+function renderHq(hq){
+  if(!hq || !hq.total) return;
+  document.getElementById('hqCard').style.display='block';
+  const orgs = (hq.orgs||[]).map(o=>
+    `<div class="kpi" style="flex:1;min-width:170px"><div class="label">${esc(o.shortName)}</div><div class="value accent">${fmtInt(o.stock)}</div><div class="sub">${esc(o.org)}</div></div>`).join('');
+  document.getElementById('hqOrgs').innerHTML =
+    `<div class="kpi" style="flex:1;min-width:170px"><div class="label">总部合计（件）</div><div class="value accent">${fmtInt(hq.total)}</div><div class="sub">两个总部组织</div></div>` + orgs;
+  const maxV = Math.max(1, ...(hq.byCat||[]).map(r=>r.stock));
+  document.getElementById('hqCats').innerHTML = (hq.byCat||[]).map(r=>
+    `<div class="hq-bar"><div class="hb-l">${esc(r.cat)}</div><div class="hb-t"><div class="hb-f" style="width:${(r.stock/maxV*100).toFixed(1)}%"></div></div><div class="hb-v">${fmtInt(r.stock)} 件</div></div>`).join('');
+}
+function renderTransfer(list){
+  list = list.filter(catMatch);
+  capped(document.querySelector('#transfer tbody'), 'transfer', list, 11, '当前类别暂无调拨建议', (r,i)=>
+    `<tr><td>${i+1}</td><td>${esc(r.sku)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td>${esc(r.from)}<br><span style="color:#5c6b82;font-size:11px">${esc(r.fromType||'')}</span></td><td>${esc(r.to)}<br><span style="color:#5c6b82;font-size:11px">${esc(r.toType||'')}</span></td><td class="num qty">${fmtInt(r.qty)}</td><td class="num">${fmtInt(r.toWeekendNeed)}</td><td class="num">${fmtInt(r.toStock)}</td><td class="num">${fmtInt(r.fromStock)}</td><td class="num">${r.fromDOS==null?'-':Number(r.fromDOS).toFixed(1)}</td><td class="num">${r.toDOS==null?'-':Number(r.toDOS).toFixed(1)}</td></tr>`);
+}
+function renderWeekly(list, summary){
+  list = (list||[]).filter(catMatch);
+  const sum = {};
+  let total = 0;
+  list.forEach(r=>{ sum[r.cat]=(sum[r.cat]||0)+r.replenish; total+=r.replenish; });
+  const order = ['手机','穿戴','平板','电脑','音频'];
+  const parts = order.filter(c=>sum[c]).map(c=>c+' '+fmtInt(sum[c]));
+  document.getElementById('wkSummary').innerHTML =
+    `共 <b>${list.length}</b> 个缺货项，合计应补 <b>${fmtInt(total)}</b> 件${parts.length?('（'+parts.join(' / ')+'）'):''}`+
+    (CAT!=='全部'?` <span style="color:#5c6b82">（已按"${CAT}"筛选；全量共 ${summary&&summary.总行数||0} 项）</span>`:'');
+  capped(document.querySelector('#weekly tbody'), 'weekly', list, 7, '当前类别暂无补货项', (r,i)=>
+    `<tr><td>${i+1}</td><td>${esc(r.store)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td>${esc(r.cat)}</td><td class="num">${fmtInt(r.stock)}</td><td class="num">${fmtInt(r.sold28)}</td><td class="num replen">${fmtInt(r.replenish)}</td></tr>`);
+}
+const ALLOC_WH = [
+  ['xdSale','讯达可售仓','全分 → 6家合作店（按销量占比分完）','非+8 → 合作店+体验店'],
+  ['xdChan','讯达渠道仓','非+8 → 合作店+体验店','非+8 → 合作店+体验店+生活馆'],
+  ['znSale','智能可售仓','非+8 → 8家生活馆','非+8 → 生活馆+合作店+体验店'],
+  ['znChan','智能渠道仓','非+8 → 8家生活馆','非+8 → 生活馆+合作店+体验店'],
+];
+let ALLOC_WH_KEY = 'xdSale', ALLOC_VER = 'Pri', ALLOC_PRI_DAYS = 14;
+function allocKey(){ return ALLOC_VER==='Pri' ? ALLOC_WH_KEY+'Pri'+ALLOC_PRI_DAYS : ALLOC_WH_KEY+ALLOC_VER; }
+function renderAllocTabs(){
+  const whs = (DATA && DATA.allocate && DATA.allocate.warehouses) || [];
+  const stockOf = k => { const w = whs.find(x=>x.key===k); return w ? w.totalStock : null; };
+  document.getElementById('allocWhTabs').innerHTML = ALLOC_WH.map(([k,name])=>
+    `<button data-wh="${k}" class="${k===ALLOC_WH_KEY?'cur':''}">${name}${stockOf(k)!=null?' '+fmtInt(stockOf(k)):''}</button>`).join('');
+  const stdLabel = ALLOC_WH_KEY==='xdSale' ? '标准版（全分）' : '标准版';
+  let verBtns = `<button data-ver="Std" class="${ALLOC_VER==='Std'?'cur':''}">${stdLabel}</button>`;
+  if(ALLOC_WH_KEY==='xdSale')
+    verBtns += `<button data-ver="Pri" class="${ALLOC_VER==='Pri'?'cur':''}">优先级版</button>`;
+  verBtns += `<button data-ver="Wide" class="${ALLOC_VER==='Wide'?'cur':''}">扩大覆盖版</button>`;
+  if(ALLOC_WH_KEY==='xdSale' && ALLOC_VER==='Pri')
+    verBtns += `<span style="margin-left:12px;color:#5c6b82;font-size:12px;align-self:center">目标周转：</span>`+
+      [7,14,21].map(d=>`<button data-days="${d}" class="${ALLOC_PRI_DAYS===d?'cur':''}">${d}天</button>`).join('');
+  document.getElementById('allocVerTabs').innerHTML = verBtns;
+  document.querySelectorAll('#allocWhTabs button').forEach(b=>b.addEventListener('click',()=>{
+    ALLOC_WH_KEY = b.dataset.wh;
+    if(ALLOC_WH_KEY!=='xdSale' && ALLOC_VER==='Pri') ALLOC_VER='Std';
+    renderAllocTabs();
+    if(DATA) renderAllocate(DATA.allocate);
+    updateExportLinks();
+  }));
+  document.querySelectorAll('#allocVerTabs button[data-days]').forEach(b=>b.addEventListener('click',()=>{
+    ALLOC_PRI_DAYS = +b.dataset.days;
+    renderAllocTabs();
+    if(DATA) renderAllocate(DATA.allocate);
+    updateExportLinks();
+  }));
+  document.querySelectorAll('#allocVerTabs button[data-ver]').forEach(b=>b.addEventListener('click',()=>{
+    ALLOC_VER = b.dataset.ver;
+    renderAllocTabs();
+    if(DATA) renderAllocate(DATA.allocate);
+    updateExportLinks();
+  }));
+}
+function renderAllocate(al){
+  const schemes = (al&&al.schemes)||null;
+  const sch = schemes ? (schemes[allocKey()]||Object.values(schemes)[0])
+                      : {summary:(al&&al.summary)||{}, list:(al&&al.list)||[], undistributed:[]};
+  const meta = ALLOC_WH.find(x=>x[0]===ALLOC_WH_KEY)||ALLOC_WH[0];
+  const w = ((al&&al.warehouses)||[]).find(x=>x.key===ALLOC_WH_KEY);
+  const fullMode = ALLOC_WH_KEY==='xdSale' && ALLOC_VER==='Std';
+  const priMode = ALLOC_WH_KEY==='xdSale' && ALLOC_VER==='Pri';
+  document.getElementById('allocTag').textContent = fullMode
+    ? `货源：${meta[1]}（可用/自有品 ${w?fmtInt(w.srcStock):'-'} 件${w&&w.totalStock!==w.srcStock?' / 仓总 '+fmtInt(w.totalStock)+' 件':''}）｜ 全分：五大类全部库存按各店近4周销量占比分给 6 家合作店`
+    : priMode
+    ? `货源：${meta[1]}（可用/自有品 ${w?fmtInt(w.srcStock):'-'} 件${w&&w.totalStock!==w.srcStock?' / 仓总 '+fmtInt(w.totalStock)+' 件':''}）｜ 优先级版：①单台覆盖——现库存为 0 的门店按近4周销量从高到低依次补 1 台，直到货源用完或缺货店全覆盖；②周转补足——按「日销×${ALLOC_PRI_DAYS}天 − 现库存 − 已覆盖」计算需求，需求大的优先、一台一台轮转分配`
+    : `货源：${meta[1]}（可用/自有品 ${w?fmtInt(w.srcStock):'-'} 件${w&&w.totalStock!==w.srcStock?' / 仓总 '+fmtInt(w.totalStock)+' 件':''}）｜ +8渠道→8家生活馆 ｜ ${ALLOC_VER==='Std'?meta[2]:meta[3]} ｜ 需求=周均销量−门店现库存`;
+  const list = (sch.list||[]).filter(catMatch);
+  const s = sch.summary||{};
+  const qty = list.reduce((a,r)=>a+r.qty,0);
+  const p1q = list.reduce((a,r)=>a+(r.phase===1?r.qty:0),0);
+  const p2q = list.reduce((a,r)=>a+(r.phase===2?r.qty:0),0);
+  document.getElementById('allocSummary').innerHTML =
+    `共 <b>${list.length}</b> 行，合计分货 <b>${fmtInt(qty)}</b> 件 ｜ 全量：${s['总分货SKU数']||0} 个 SKU / ${fmtInt(s['总分货件数']||0)} 件（其中+8 <b>${fmtInt(s['其中+8件数']||0)}</b> 件）/ 覆盖 ${s['覆盖门店数']||0} 家门店 ｜ 货源库存 ${fmtInt(s['货源库存']||0)} 件`+
+    (priMode?` ｜ 单台覆盖 <b style="color:#34d399">${fmtInt(p1q)}</b> 件 / 周转补足 <b style="color:#60a5fa">${fmtInt(p2q)}</b> 件`:'')+
+    (list.some(r=>r.byCat)?` ｜ <span style="color:#5c6b82">带*为按产业销量占比分配（该 SKU 无直接销售记录）</span>`:'')+
+    (CAT!=='全部'?` <span style="color:#5c6b82">（已按"${CAT}"筛选；全量共 ${s['总行数']||list.length} 行）</span>`:'');
+  capped(document.querySelector('#allocate tbody'), 'allocate', list, 9, '当前类别暂无分货建议', (r,i)=>{
+    const p8 = r.channel==='+8';
+    const soldCell = r.byCat ? `<span title="按产业销量占比分配（该 SKU 无直接销售记录）" style="color:#f59e0b">${fmtInt(r.sold28)}*</span>` : fmtInt(r.sold28);
+    const phTag = r.phase===1 ? '<span class="ph1">覆盖</span>' : (r.phase===2 ? '<span class="ph2">补足</span>' : '');
+    return `<tr${p8?' class="p8row"':''}><td>${i+1}</td><td>${esc(r.sku)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td>${esc(r.cat)}</td><td class="${p8?'p8':''}">${esc(r.channel||'其他')}</td><td>${esc(r.store)}</td><td class="num replen">${fmtInt(r.qty)}${phTag}</td><td class="num">${fmtInt(r.storeStock)}</td><td class="num">${soldCell}</td></tr>`;
+  });
+  const und = sch.undistributed||[];
+  document.getElementById('allocUnd').innerHTML = und.length ?
+    `<div style="margin-top:8px;font-size:12px;color:#f59e0b;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:6px 10px;line-height:1.7">`+
+    `⚠ <b>${und.length}</b> 个 SKU（合计 <b>${fmtInt(und.reduce((a,u)=>a+(u.H||0),0))}</b> 件）因无销售记录未分货：`+
+    und.map(u=>`${esc(u.name)}×${fmtInt(u.H)}`).join('、')+`</div>` : '';
+}
+function renderShortage(list){
+  list = list.filter(catMatch);
+  capped(document.querySelector('#shortage tbody'), 'shortage', list, 5, '当前类别暂无缺货预警', (r,i)=>
+    `<tr><td>${i+1}</td><td>${esc(r.store)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td class="num">${fmtInt(r.sold30)}</td><td class="num zero">${fmtInt(r.stock)}</td></tr>`);
+}
+function renderTight(list){
+  list = list.filter(catMatch);
+  capped(document.querySelector('#tight tbody'), 'tight', list, 6, '当前类别暂无紧缺预警', (r,i)=>
+    `<tr><td>${i+1}</td><td>${esc(r.store)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td class="num">${fmtInt(r.stock)}</td><td class="num">${fmtInt(r.sold30)}</td><td class="num warn">${fmtDays(r.days)}</td></tr>`);
+}
+function renderCoverage(list){
+  list = list.filter(catMatch);
+  const tb = document.querySelector('#coverage tbody');
+  tb.innerHTML = list.map((r,i)=>{
+    const cls = r.rate>=80?'':(r.rate>=50?'mid':'low');
+    return `<tr class="clickable" data-i="${i}"><td>${i+1}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td>
+      <td><span class="ratebar ${cls}"><i style="width:${Math.min(r.rate,100)}%"></i></span>${r.rate}%</td>
+      <td class="num">${r.达标门店数}/${r.应覆盖门店数}</td></tr>
+      <tr class="sublist" id="covsub${i}" style="display:none"><td colspan="4">未达标门店：${r.未达标门店.map(esc).join('、')||'无'}</td></tr>`;
+  }).join('') || '<tr><td colspan="4">当前类别暂无覆盖数据</td></tr>';
+  tb.querySelectorAll('tr.clickable').forEach(tr=>tr.addEventListener('click',()=>{
+    const sub=document.getElementById('covsub'+tr.dataset.i);
+    sub.style.display = sub.style.display==='none'?'table-row':'none';
+  }));
+}
+function renderTurnover(list){
+  list = list.filter(catMatch);
+  capped(document.querySelector('#turnover tbody'), 'turnover', list, 6, '当前类别暂无慢周转预警', (r,i)=>
+    `<tr><td>${i+1}</td><td>${esc(r.store)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td class="num">${fmtInt(r.stock)}</td><td class="num">${fmtInt(r.sold30)}</td><td class="num">${fmtDays(r.days)}</td></tr>`);
+}
+function renderStoreBars(s){
+  const max = Math.max(...s.库存, 1);
+  document.getElementById('storebars').innerHTML = s.names.map((n,i)=>
+    `<div class="bar-row"><div class="name" title="${esc(n)}">${esc(n)}</div><div class="track"><div class="fill" style="width:${(s.库存[i]/max*100).toFixed(1)}%"></div></div><div class="val">${fmtInt(s.库存[i])}件 ｜ ${fmtDays(s.可售天数[i])}天</div></div>`).join('');
+}
+function updateExportLinks(){
+  document.querySelectorAll('.exp-btn').forEach(a=>{
+    if(!a.dataset.table) return;  // 货源查询导出链接由 renderSourcing 维护
+    let href = '/export?table='+a.dataset.table;
+    if(CAT!=='全部') href += '&category='+encodeURIComponent(CAT);
+    if(a.dataset.table==='allocate') href += '&scheme='+allocKey();
+    a.href = href;
+  });
+}
+/* ---------- 货源查询（数据来自 stocktree.json，按需加载） ---------- */
+let TREE = null, TREE_SNAP = null, TREE_PROMISE = null;
+let SRC_CAT = '全部', SRC_SPU = '全部';   // SRC_SPU: '全部' 或 '大类|SPU'
+let SRC_SORT = {k:'stock', d:-1};
+function ensureTree(){
+  if(TREE) return Promise.resolve(TREE);
+  if(!TREE_PROMISE){
+    TREE_PROMISE = fetch('stocktree.json?_='+Date.now(), {cache:'no-store'})
+      .then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(t=>{ TREE=t; TREE_SNAP=(DATA&&DATA.snapshotAt)||null; TREE_PROMISE=null; return t; })
+      .catch(e=>{ TREE_PROMISE=null;
+        document.getElementById('srcSummary').textContent='stocktree.json 加载失败：'+e.message;
+        throw e; });
+  }
+  return TREE_PROMISE;
+}
+function srcSpuOptions(){   // 当前大类下的 SPU 选项 [{key,label,totalStock}]
+  if(!TREE) return [];
+  const out = [];
+  TREE.categories.forEach(c=>{
+    if(SRC_CAT!=='全部' && c.cat!==SRC_CAT) return;
+    (c.spus||[]).forEach(s=>out.push({key:c.cat+'|'+s.spu,
+      label:(SRC_CAT==='全部' ? c.cat+' / ' : '')+s.spu, totalStock:s.totalStock||0}));
+  });
+  out.sort((a,b)=>b.totalStock-a.totalStock);
+  return out;
+}
+function renderSrcCats(){   // 大类下拉: 树加载/重载后只构建一次; 并校验当前 SPU 是否仍存在
+  const catSel = document.getElementById('srcCat');
+  const cats = TREE ? TREE.categories.map(c=>c.cat) : [];
+  catSel.innerHTML = ['全部'].concat(cats).map(c=>
+    `<option value="${esc(c)}"${c===SRC_CAT?' selected':''}>${esc(c)}</option>`).join('');
+  if(SRC_SPU!=='全部' && !srcSpuOptions().some(o=>o.key===SRC_SPU)) SRC_SPU='全部';
+  syncSrcSpuInput();
+}
+/* SPU 可搜索下拉: 输入过滤, 首屏最多渲染 SRC_COMBO_CAP 个匹配项(不再一次性渲染数百个 option) */
+const SRC_COMBO_CAP = 50;
+const SRC_ROW_LIMIT = 2000;   // 明细行超过此数时先按库存降序截取再排序展示
+let SRC_COMBO_OPEN = false;
+function srcComboLabel(){
+  if(SRC_SPU==='全部') return '';
+  const opt = srcSpuOptions().find(o=>o.key===SRC_SPU);
+  return opt ? opt.label : '';
+}
+function syncSrcSpuInput(){
+  const inp = document.getElementById('srcSpuInput');
+  if(inp && !SRC_COMBO_OPEN) inp.value = srcComboLabel();
+}
+function openSrcCombo(){
+  if(!TREE){   // 树未就绪时先加载, 就绪后再展开
+    ensureTree().then(()=>{ renderSrcCats(); renderSourcing(); openSrcCombo(); }).catch(()=>{});
+    return;
+  }
+  SRC_COMBO_OPEN = true;
+  document.getElementById('srcSpuInput').value = '';  // 展开即见全部匹配
+  document.getElementById('srcSpuList').style.display = 'block';
+  renderSrcComboList();
+}
+function closeSrcCombo(){
+  if(!SRC_COMBO_OPEN) return;
+  SRC_COMBO_OPEN = false;
+  document.getElementById('srcSpuList').style.display = 'none';
+  syncSrcSpuInput();
+}
+function pickSrcSpu(key){
+  SRC_SPU = key;
+  closeSrcCombo();
+  renderSourcing();
+}
+function renderSrcComboList(){
+  const list = document.getElementById('srcSpuList');
+  if(!TREE){ list.innerHTML = '<div class="src-combo-more">正在加载货源数据…</div>'; return; }
+  const q = document.getElementById('srcSpuInput').value.trim().toLowerCase();
+  let opts = srcSpuOptions();
+  if(q) opts = opts.filter(o=>o.label.toLowerCase().includes(q));
+  const total = opts.length;
+  const show = opts.slice(0, SRC_COMBO_CAP);
+  let html = `<div class="src-combo-item${SRC_SPU==='全部'?' cur':''}" data-key="全部">全部SPU</div>`;
+  html += show.map(o=>
+    `<div class="src-combo-item${o.key===SRC_SPU?' cur':''}" data-key="${esc(o.key)}" title="${esc(o.label)}">${esc(o.label)}<span class="cnt">${fmtInt(o.totalStock)} 件</span></div>`).join('');
+  if(total > SRC_COMBO_CAP)
+    html += `<div class="src-combo-more">仅显示前 ${SRC_COMBO_CAP} 项（共 ${total} 项匹配），继续输入可缩小范围</div>`;
+  else if(!total) html += '<div class="src-combo-more">无匹配 SPU</div>';
+  list.innerHTML = html;
+  list.querySelectorAll('.src-combo-item').forEach(it=>
+    it.addEventListener('mousedown', e=>{ e.preventDefault(); pickSrcSpu(it.dataset.key); }));
+}
+function srcSelectedSpus(){   // 当前选中的 SPU 对象数组 [{cat, spuObj}]
+  const out = [];
+  if(!TREE) return out;
+  TREE.categories.forEach(c=>{
+    if(SRC_CAT!=='全部' && c.cat!==SRC_CAT) return;
+    (c.spus||[]).forEach(s=>{
+      if(SRC_SPU!=='全部' && c.cat+'|'+s.spu!==SRC_SPU) return;
+      out.push({cat:c.cat, spuObj:s});
+    });
+  });
+  return out;
+}
+function aggChan(spus, key){   // 汇总渠道分布 [{channel,stock}] 降序
+  const m = {};
+  spus.forEach(({spuObj:s})=>((s[key]||[]).forEach(x=>{
+    m[x.channel]=(m[x.channel]||0)+x.stock; })));
+  return Object.entries(m).map(([channel,stock])=>({channel,stock}))
+    .sort((a,b)=>b.stock-a.stock);
+}
+function renderSourcing(){
+  const sumEl = document.getElementById('srcSummary');
+  if(!TREE){ sumEl.textContent = TREE_PROMISE ? '正在加载货源数据（约4.6MB，仅首次）…' : '点击本卡片任意处加载货源数据（约4.6MB，仅首次）'; return; }
+  const spus = srcSelectedSpus();
+  const st = (DATA && DATA.storeTypes) || {};
+  // 明细行: 门店×SKU
+  const rows = [];
+  spus.forEach(({cat, spuObj:s})=>(s.skus||[]).forEach(sk=>(sk.storeDetail||[]).forEach(sd=>{
+    rows.push({store:sd.store, storeType:st[sd.store]||'', sku:sk.sku, name:sk.name,
+               stock:sd.stock, sold28:sd.sold28});
+  })));
+  // 行数过大时先按库存降序截取(数值排序, 廉价), 避免全量排序拖垮主线程
+  const totalRows = rows.length;
+  const truncated = totalRows > SRC_ROW_LIMIT;
+  if(truncated){
+    rows.sort((a,b)=>b.stock-a.stock);
+    rows.length = SRC_ROW_LIMIT;
+  }
+  // 排序: 数值直接比较, 字符串用普通 < > 比较(不用 localeCompare——22k行×ICU排序会卡数秒)
+  const {k, d} = SRC_SORT;
+  rows.sort((a,b)=>{
+    const va=a[k], vb=b[k];
+    if(typeof va==='number' && typeof vb==='number') return (va-vb)*d;
+    return (va<vb?-1:va>vb?1:0)*d;
+  });
+  // 汇总行
+  const totStock = spus.reduce((t,{spuObj:s})=>t+(s.totalStock||0),0);
+  const totSold = spus.reduce((t,{spuObj:s})=>t+(s.sold28||0),0);
+  const totHq = spus.reduce((t,{spuObj:s})=>t+(s.hqStock||0),0);
+  sumEl.textContent = `${spus.length} 个SPU ｜ 门店库存 ${fmtInt(totStock)} 件 ｜ 近4周销量 ${fmtInt(totSold)} 件 ｜ 总部库存 ${fmtInt(totHq)} 件 ｜ ` +
+    (truncated ? `仅显示库存前 ${fmtInt(SRC_ROW_LIMIT)} 行（共 ${fmtInt(totalRows)} 行），可用大类/SPU 缩小范围`
+               : `明细 ${fmtInt(totalRows)} 行`);
+  // 渠道条
+  const sc = aggChan(spus,'channels'), hc = aggChan(spus,'hqChannels');
+  const maxS = Math.max(1,...sc.map(x=>x.stock)), maxH = Math.max(1,...hc.map(x=>x.stock));
+  document.getElementById('srcChanStore').innerHTML = sc.length ? sc.map(x=>
+    `<div class="bar-row"><div class="name" title="${esc(x.channel)}">${esc(x.channel)}</div><div class="track"><div class="fill" style="width:${(x.stock/maxS*100).toFixed(1)}%"></div></div><div class="val">${fmtInt(x.stock)} 件</div></div>`).join('')
+    : '<div style="font-size:12px;color:#43516a">无门店渠道库存</div>';
+  document.getElementById('srcChanHq').innerHTML = hc.length ? hc.map(x=>
+    `<div class="hq-bar"><div class="hb-l" style="width:150px" title="${esc(x.channel)}">${esc(x.channel)}</div><div class="hb-t"><div class="hb-f" style="width:${(x.stock/maxH*100).toFixed(1)}%"></div></div><div class="hb-v">${fmtInt(x.stock)} 件</div></div>`).join('')
+    : '<div style="font-size:12px;color:#43516a">无总部渠道库存</div>';
+  // 明细表
+  document.querySelectorAll('#sourcing th.sortable').forEach(th=>{
+    const kk = th.dataset.k;
+    th.textContent = th.textContent.replace(/[ ▲▼]$/,'') + (kk===k ? (d===1?' ▲':' ▼') : '');
+  });
+  capped(document.querySelector('#sourcing tbody'), 'sourcing', rows, 6, '当前筛选无库存明细', (r,i)=>
+    `<tr><td>${esc(r.store)}</td><td>${esc(r.storeType)}</td><td>${esc(r.sku)}</td><td class="pname" title="${esc(r.name)}">${esc(r.name)}</td><td class="num">${fmtInt(r.stock)}</td><td class="num">${r.sold28==null?'-':(+r.sold28).toLocaleString('zh-CN',{maximumFractionDigits:1})}</td></tr>`);
+  // 导出链接
+  const spuName = SRC_SPU==='全部' ? '全部' : SRC_SPU.split('|').slice(1).join('|');
+  document.getElementById('srcExport').href =
+    '/export?table=sourcing&cat='+encodeURIComponent(SRC_CAT)+'&spu='+encodeURIComponent(spuName);
+}
+function initSourcing(){
+  // 懒加载: 首次与卡片交互时才拉取 4.6MB stocktree.json, 页面加载不再自动请求
+  let kicking = false;
+  const kick = ()=>{
+    if(TREE || TREE_PROMISE || kicking) return;
+    kicking = true;
+    const p = ensureTree();   // TREE_PROMISE 立即置位
+    renderSourcing();         // 显示"正在加载"提示
+    p.then(()=>{ renderSrcCats(); renderSourcing(); })
+     .catch(()=>{}).finally(()=>{ kicking = false; });
+  };
+  document.getElementById('srcCard').addEventListener('click', kick);
+  document.getElementById('srcCat').addEventListener('change', e=>{
+    if(!TREE){ kick(); return; }   // 树未就绪: 先加载, 就绪后用户再选
+    SRC_CAT = e.target.value; SRC_SPU = '全部';
+    closeSrcCombo(); syncSrcSpuInput(); renderSourcing();
+  });
+  const inp = document.getElementById('srcSpuInput');
+  inp.addEventListener('focus', openSrcCombo);
+  inp.addEventListener('input', ()=>{ SRC_COMBO_OPEN ? renderSrcComboList() : openSrcCombo(); });
+  inp.addEventListener('blur', ()=>{ setTimeout(closeSrcCombo, 150); });
+  inp.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){ closeSrcCombo(); inp.blur(); }
+    else if(e.key==='Enter' && SRC_COMBO_OPEN){
+      e.preventDefault();
+      const first = document.querySelector('#srcSpuList .src-combo-item');
+      if(first) pickSrcSpu(first.dataset.key);
+    }
+  });
+  document.addEventListener('click', e=>{ if(!e.target.closest('#srcSpuCombo')) closeSrcCombo(); });
+  document.querySelectorAll('#sourcing th.sortable').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      if(!TREE){ kick(); return; }
+      const k = th.dataset.k;
+      if(SRC_SORT.k===k) SRC_SORT.d = -SRC_SORT.d; else SRC_SORT = {k, d:k==='stock'||k==='sold28'?-1:1};
+      renderSourcing();
+    });
+  });
+  renderSourcing();  // 初始显示"点击加载"提示, 不拉数据
+}
+initSourcing();
+function renderDashboard(d){
+  if(!d||!d.kpi) return;
+  DATA=d;
+  document.getElementById('snapshot').textContent=d.snapshotAt||'-';
+  document.getElementById('salesrange').textContent=d.salesRange||'-';
+  renderKpis(d.kpi);
+  renderHq(d.hq);
+  renderTransfer(d.transfer||[]);
+  renderWeekly(d.weekly||[], d.weeklySummary);
+  renderAllocTabs();
+  renderAllocate(d.allocate);
+  renderShortage(d.shortage||[]);
+  renderTight(d.tight||[]);
+  renderCoverage(d.coverage||[]);
+  renderTurnover(d.turnover||[]);
+  renderStoreBars(d.storeSummary||{names:[],库存:[],可售天数:[]});
+  updateExportLinks();
+  // 数据快照更新后, stocktree.json 也已重建, 需重载
+  if(TREE && TREE_SNAP && d.snapshotAt && TREE_SNAP!==d.snapshotAt){
+    TREE=null;
+    ensureTree().then(()=>{ renderSrcCats(); renderSourcing(); }).catch(()=>{});
+  }
+  renderSourcing();
+}
+let LAST_SNAP = null;
+async function refresh(){
+  try{
+    const r = await fetch('inventory.json?_='+Date.now(), {cache:'no-store'});
+    if(r.ok){ const d = await r.json();
+      // 快照未变则跳过重渲染，避免每60秒全量重建DOM造成卡顿
+      if(d && d.snapshotAt && d.snapshotAt===LAST_SNAP) return;
+      LAST_SNAP = (d && d.snapshotAt) || LAST_SNAP;
+      renderDashboard(d);
+    }
+  }catch(e){ /* 保持旧数据 */ }
+}
+renderFilters();
+renderAllocTabs();
+refresh();
+setInterval(refresh, 60000);
+/* 自动获取数据总开关 */
+async function initAutoRefresh(){
+  const cb = document.getElementById('autoRefresh');
+  const hint = document.getElementById('arHint');
+  if(!cb) return;
+  const sync = ()=>hint.classList.toggle('show', !cb.checked);
+  try{
+    const r = await fetch('/api/auto-refresh', {cache:'no-store'});
+    if(r.ok){ const d = await r.json(); cb.checked = !!d.enabled; }
+  }catch(e){ /* 接口不可用时保持默认开 */ }
+  sync();
+  cb.addEventListener('change', async ()=>{
+    const want = cb.checked;
+    try{
+      const r = await fetch('/api/auto-refresh', {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({enabled:want})});
+      const d = await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || ('HTTP '+r.status));
+      cb.checked = !!d.enabled;
+    }catch(e){
+      cb.checked = !want;
+      alert('设置失败：'+e.message);
+    }
+    sync();
+  });
+}
+initAutoRefresh();
+
+/* 同行高亮: 点击锁定(事件委托; 只加样式不拦截现有行点击; 排序/翻页/加载更多重渲染后自动失效) */
+document.addEventListener('click', e=>{
+  const tr = e.target.closest('tbody tr');
+  if(!tr) return;
+  const was = tr.classList.contains('hl');
+  tr.parentElement.querySelectorAll('tr.hl').forEach(r=>r.classList.remove('hl'));
+  if(!was) tr.classList.add('hl');
+});
+</script>
+</body>
+</html>
