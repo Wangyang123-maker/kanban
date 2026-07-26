@@ -12,6 +12,8 @@ DATA = ["data.json", "dailycube.json", "inventory.json", "stocktree.json", "mtd.
 
 for source_name, target_name in PAGES.items():
     shutil.copy2(SOURCE / source_name, ROOT / target_name)
+    page = ROOT / target_name
+    page.write_text(page.read_text(encoding="utf-8").replace('href="index.html"', 'href="retail.html"'), encoding="utf-8")
 for name in DATA:
     shutil.copy2(SOURCE / name, ROOT / name)
 

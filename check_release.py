@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 required_json = ["data.json", "dailycube.json", "inventory.json", "stocktree.json", "mtd.json", "insights.json", "demo.json"]
-required_pages = ["index.html", "retail.html", "inventory.html", "stock.html", "target.html", "insights.html", "demo.html"]
+required_pages = ["index.html", "retail.html", "inventory.html", "stock.html", "target.html", "insights.html", "demo.html", "upload.html"]
 
 for name in required_pages:
     p = ROOT / name
