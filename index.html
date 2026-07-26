@@ -1,27 +1,81 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0f1623"><link rel="manifest" href="manifest.json">
-<title>零售数据看板</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>零售数据看板 · 入口</title>
 <style>
-*{box-sizing:border-box}body{margin:0;padding:32px 16px;background:#0f1623;color:#e8eef7;font:14px/1.6 -apple-system,"Microsoft YaHei",sans-serif}.wrap{max-width:720px;margin:auto}.logo{font-size:24px;font-weight:700}.sub{color:#8b98aa;margin:4px 0 24px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.card{display:block;padding:18px;background:#182234;border:1px solid #25334d;border-radius:10px;color:#e8eef7;text-decoration:none}.card:hover{border-color:#2dd4bf}.card b{display:block;font-size:16px}.card span{display:block;color:#8b98aa;font-size:12px;margin-top:4px}.note{margin-top:18px;padding:14px;background:#2a2118;border:1px solid #4d3b25;border-radius:10px;color:#e8c98a;font-size:12px}.foot{margin-top:22px;color:#55637a;font-size:11px}@media(max-width:520px){.grid{grid-template-columns:1fr}}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#0f1623;color:#e8eef7;
+       min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+  .logo{font-size:22px;font-weight:700;margin-bottom:6px}
+  .sub{font-size:13px;color:#7c8aa0;margin-bottom:28px}
+  .card{width:100%;max-width:520px;background:#182234;border:1px solid #25334d;border-radius:14px;
+        padding:20px;margin-bottom:14px}
+  .st{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:12px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#8a97ab;flex:none}
+  .dot.on{background:#2dd4bf;box-shadow:0 0 8px #2dd4bf}
+  .dot.off{background:#f0524f}
+  .stxt{margin-left:auto;font-size:12px;color:#55637a}
+  .url{font-size:12px;color:#7c8aa0;word-break:break-all;margin-bottom:14px}
+  .row{display:flex;gap:10px}
+  a.btn,button.btn{flex:1;text-align:center;text-decoration:none;border:none;cursor:pointer;
+        padding:13px 0;border-radius:9px;font-size:15px;font-weight:600}
+  .open{background:#2dd4bf;color:#062a26}
+  .copy{background:#25334d;color:#c8d4e6}
+  .tip{width:100%;max-width:520px;background:#2a2118;border:1px solid #4d3b25;border-radius:12px;
+       padding:14px 16px;font-size:13px;color:#e8c98a;line-height:1.8}
+  .foot{margin-top:26px;font-size:11px;color:#55637a}
+  #auto{display:none;width:100%;max-width:520px;text-align:center;font-size:13px;color:#2dd4bf;margin-bottom:16px}
 </style>
 </head>
-<body><main class="wrap">
-<div class="logo">零售数据看板</div>
-<div class="sub">静态数据快照 · 手机和电脑均可访问</div>
-<div class="grid">
-<a class="card" href="retail.html"><b>零售总览</b><span>月度销售、门店和核心指标</span></a>
-<a class="card" href="inventory.html"><b>库存查询</b><span>门店、SPU、SKU 分级查询</span></a>
-<a class="card" href="stock.html"><b>库存分析</b><span>库存结构与明细</span></a>
-<a class="card" href="demo.html"><b>样机管理</b><span>闲置、陈列及主机动销分类</span></a>
-<a class="card" href="target.html"><b>目标看板</b><span>月度目标与完成情况</span></a>
-<a class="card" href="insights.html"><b>经营分析</b><span>零售和库存分析</span></a>
-</div>
-<div class="note">这是公开静态快照入口。数据更新后需要重新发布；Excel 上传和自动计算请使用实时管理地址。</div>
-<div class="foot" id="foot">加载发布信息中…</div>
-</main><script>
-fetch('release.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{if(v)document.querySelector('#foot').textContent='快照更新时间：'+v.updated+' · 数据校验：'+v.checksumStatus}).catch(()=>{document.querySelector('#foot').textContent='静态快照入口'})
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-</script></body></html>
+<body>
+  <div class="logo">📊 零售数据看板</div>
+  <div class="sub">北京终端业务 · 实时零售 / 库存 / 分货数据</div>
+  <div id="auto"></div>
+  <div id="cards"></div>
+  <div class="tip">
+    ⚠️ <b>如果在微信里打开是白屏</b>：点右上角「···」→「在浏览器打开」，即可正常访问。<br>
+    建议把看板地址<b>收藏到浏览器</b>，以后直接从浏览器进。
+  </div>
+  <div class="foot" id="upd"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+async function main(){
+  let d;
+  try{ d=await(await fetch('urls.json?t='+Date.now())).json(); }
+  catch(e){ $('#cards').innerHTML='<div class="card">地址配置加载失败，请稍后再试</div>'; return; }
+  $('#upd').textContent='地址更新于 '+d.updated;
+  const cards=d.links.map((l,i)=>`
+    <div class="card">
+      <div class="st"><span class="dot" id="dot${i}"></span><b>${l.name}</b><span class="stxt" id="stxt${i}">检测中…</span></div>
+      <div class="url">${l.url}</div>
+      <div class="row">
+        <a class="btn open" href="${l.url}">打开看板</a>
+        <button class="btn copy" data-u="${l.url}">复制地址</button>
+      </div>
+    </div>`).join('');
+  $('#cards').innerHTML=cards;
+  document.querySelectorAll('.copy').forEach(b=>b.onclick=async()=>{
+    try{ await navigator.clipboard.writeText(b.dataset.u); b.textContent='已复制 ✓'; }
+    catch(e){ prompt('长按复制：',b.dataset.u); }
+    setTimeout(()=>b.textContent='复制地址',1500);
+  });
+  // 用服务端健康接口探测，避免 no-cors 把 404/错误页误判为可用。
+  d.links.forEach(async(l,i)=>{
+    try{
+      const ctl=new AbortController();
+      setTimeout(()=>ctl.abort(),6000);
+      const r=await fetch(l.url+'/api/status?probe='+Date.now(),{signal:ctl.signal,cache:'no-store',mode:'cors'});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      await r.json();
+      $('#dot'+i).classList.add('on');
+      $('#stxt'+i).textContent='可用 ✓';
+    }catch(e){ $('#dot'+i).classList.add('off'); $('#stxt'+i).textContent='当前不通'; }
+  });
+}
+main();
+</script>
+</body>
+</html>
