@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-10 12:50",
+  "updated": "2026-08-10 12:55",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://inquiries-televisions-gradually-fee.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://called-eastern-guides-sport.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
