@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-14 18:32",
+  "updated": "2026-08-14 19:32",
   "links": [
     {
       "name": "线路一（推荐）",
@@ -7,7 +7,7 @@
       "primary": true
     },
     {
-      "name": "线路二（固定备用·当前离线）",
+      "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
       "primary": false
     }
