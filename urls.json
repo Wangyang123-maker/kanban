@@ -1,10 +1,10 @@
 {
-  "updated": "2026-08-21 12:30",
+  "updated": "2026-08-21 12:32",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
+      "name": "线路一（推荐）",
       "url": "https://americas-demanding-stopped-hobbies.trycloudflare.com",
-      "primary": false
+      "primary": true
     },
     {
       "name": "线路二（固定备用·当前离线）",
