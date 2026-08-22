@@ -1,13 +1,30 @@
 {
-  "updated": "2026-07-26T12:34:38+08:00",
+  "updated": "2026-08-22T16:36:47+08:00",
+  "mode": "public-readonly-snapshot",
   "checksumStatus": "passed",
   "files": {
-    "data.json": "afbf7a4a057b8eed127c884fa3a41dd737e5940629192f6afd2253cfef717055",
-    "dailycube.json": "d1f8f80214c0cb4a84f9a2f3ee11ca52bcc9e1a5fdc24bc83988df630fed8b07",
-    "inventory.json": "2e15f5c57c514709f7ae5c63b9cc10a08efe90fca8b60fc22dec8dce7e69a492",
-    "stocktree.json": "ed323ad099a29af09ebe93b14f0e5d6551a3b7fd821c568e5eb99178622ce917",
-    "mtd.json": "053dc4007ec2f633e2e6974947bb0552d734c5b9d874a21fa9214d4ae65822ae",
-    "insights.json": "6a73d706e28402dd4737c59e8e4cc4aa8bacafae6b937cd0762d0541eea1accd",
-    "demo.json": "7ffb4197d04e55c4de3a998254001b4a34e44dbd2e6dc84235a9cb978f5a794d"
+    "index.html": "9672566c2dd8e5448268c973e2de748f84e3701775e2146b04ed30f191588b6f",
+    "inventory.html": "a2edd992e60c6aea009de0f9aff051211f3ab8b49d51be8e36e7e98f519591b0",
+    "stock.html": "a39ad67f33b50aaf2c7d9cc13b880c21a8e80ba4aa6a1cbce3136dfc021d4942",
+    "finance.html": "cbfe22778f30b10cd776d3edcb5923bfd9d6ed71303e56586ef436e9534105d9",
+    "product.html": "7ff7950835d4e792d9d5b56ff6b70022438d6f574ce982294cdc6b613b0209a8",
+    "sales.html": "e6356fcd35dd1beab92d76abda08ee91c1b805cffe69bd7b58347760e8501688",
+    "insights.html": "5dd38ebc48f64b6eddfdc7cf7f8b3b515d8a9a0d80f55e7789d33736bfd2d9a9",
+    "target.html": "32d9d4a1ffc644f4f93131ef48ffead7ac00e7caa59d5b9397514aba7a111a6d",
+    "launch.html": "b951e472701485770e74609b55fccc5ffd400d6441ca260f8ca74926494ea4d4",
+    "demo.html": "a8591091756cc223b2afca838b69220cb9a7ba6d73b5840df43efff3bce11ea3",
+    "guide.html": "262e3c3c17dfd4a010aa519e3ecc157b25b6ac73c9934eac6a16315f082bced7",
+    "data.json": "f47a993cb3c838429b45d3543b887ae50c16acdcbc75937e3eee9495459dc569",
+    "dailycube.json": "e085063fddf53ab69ab03eee1aafc86c6f9c2e77e6c5311a400227e3c84b6822",
+    "inventory.json": "6f8688db30513855e973b2cbd6e50f1b1fe303c782b0787e9151995b3f37695e",
+    "stocktree.json": "44111bf40986b984f1fd37c7959c7a79bbc26c63bcb826e5d54281901405731e",
+    "mtd.json": "8afe332e27eea057ce1172632c7efaccdee34fcc93e10d40dca0266660d2b6cd",
+    "insights.json": "736a62bbb8a77ce9f4223e42e22195242ba3a0a8564a9ee8c610b636df62c6f5",
+    "demo.json": "9fb41e6a233a0f177817314d27e2b349d556d8afe25689a1dc95d6cf05eca0eb",
+    "targets.json": "845a0744b3fdd4afc7bae526fafb1126aebdefd38a847ca5dfe0e14b7be6aed2",
+    "spumap.json": "10c3982cb01e3a616aa9e9340498835705628f7f09c6f066153dda80cb662ef2",
+    "apple.css": "7fa94e673d5cfb43d309b70036e4cc702aead1c98dca8f954340fe20794c8631",
+    "retail.html": "9672566c2dd8e5448268c973e2de748f84e3701775e2146b04ed30f191588b6f",
+    "public-runtime.js": "d4dd038cdc4005103541fa1042edc7deefe881fe2682c5e896eb628e3c99e748"
   }
 }

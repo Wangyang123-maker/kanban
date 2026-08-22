@@ -80,26 +80,45 @@
   .dio-g { color:#34d399; font-weight:700; }
   .spu-sec { font-size:13px; color:#a8b8cc; margin:14px 0 6px; }
   .foot { margin-top:14px; font-size:11px; color:#43516a; text-align:center; }
+  .catalog-actions { display:flex; gap:6px; margin-left:auto; }
+  .catalog-btn { background:#16202f; border:1px solid #334155; color:#cbd5e1; border-radius:6px; padding:5px 10px; cursor:pointer; font-size:11px; }
+  .catalog-btn.primary { background:#2563eb; border-color:#2563eb; color:#fff; }
+  .catalog-btn.danger { color:#fca5a5; border-color:#7f1d1d; }
+  dialog.catalog-modal { width:min(720px,94vw); border:1px solid #334155; border-radius:10px; background:#121a28; color:#dbe4f0; padding:0; box-shadow:0 24px 80px rgba(0,0,0,.65); }
+  dialog.catalog-modal::backdrop { background:rgba(0,0,0,.7); }
+  .catalog-head,.catalog-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 16px; border-bottom:1px solid #1f2c42; }
+  .catalog-foot { border:0; border-top:1px solid #1f2c42; justify-content:flex-end; }
+  .catalog-body { padding:16px; display:grid; gap:12px; }
+  .catalog-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .catalog-field label { display:block; font-size:11px; color:#7d8ca3; margin-bottom:5px; }
+  .catalog-field input,.catalog-field select { width:100%; background:#0d1420; border:1px solid #334155; color:#fff; border-radius:6px; padding:8px; }
+  .catalog-note { color:#7d8ca3; font-size:11px; line-height:1.6; }
   @media (max-width: 860px) {
     body { padding:10px; }
     .sku-info { grid-template-columns:repeat(2,1fr); }
     .cat-grid { grid-template-columns:1fr; }
     td.pname { min-width:150px; }
   }
+  @media(max-width:640px){.catalog-grid{grid-template-columns:1fr}.catalog-field.wide{grid-column:auto}}
   /* 同行高亮: 悬停(浅) + 点击锁定(深一档); !important 覆盖斑马纹/+8/选中行背景; 锁定规则在后, 悬停时仍保持锁定色 */
   tbody tr:hover td { background:rgba(45,212,191,.12) !important; }
   tbody tr.hl td { background:rgba(45,212,191,.22) !important; }
 </style>
+<link rel="stylesheet" href="apple.css?v=20260727-theme2">
+<script src="public-runtime.js?v=20260822-public1"></script>
 </head>
 <body>
 <div class="nav">
-  <a href="retail.html">零售看板</a>
+  <a href="index.html">零售看板</a>
   <a href="inventory.html">库存看板</a>
   <a href="stock.html" class="cur">库存查询</a>
-  <a href="product.html">商品分析</a>
+  <a href="finance.html">库存金额</a>
+  <a href="product.html">商品分析</a><a href="sales.html">产品销售</a>
   <a href="insights.html">经营分析</a>
-  <a href="target.html">达成看板</a>
-  <a href="upload.html">手动上传</a>
+<a href="target.html?v=20260727-entry2">达成看板</a>
+  <a href="launch.html">新品首销</a>
+  <a href="demo.html">样机管理</a>
+<a href="upload.html?v=20260727-entry2">手动上传</a>
   <a href="guide.html">使用指南</a>
   <span class="auto-sw">自动获取数据 <label class="switch"><input type="checkbox" id="autoRefresh"><i></i></label><span class="sw-hint" id="arHint">已关闭，数据将不再自动更新，可手动上传</span></span>
 </div>
@@ -110,9 +129,10 @@
 
 <!-- A. 库存查询 -->
 <div class="card" style="margin-top:0">
-  <h2>库存查询<span class="tag">大类 → SPU → SKU 三级联动，可按门店筛选</span></h2>
+  <h2>库存查询<span class="tag">大类 → SPU → SKU 三级联动，可按门店筛选</span><span class="catalog-actions"><button class="catalog-btn primary" id="catalogManage">管理品类 / SPU / SKU</button></span></h2>
   <div class="query-bar">
     <select id="selStore"></select>
+    <select id="selStoreType"><option value="">全部店型</option><option>生活馆</option><option>体验店</option><option>合作店</option><option>未分组</option></select>
     <select id="selCat"></select>
     <span class="combo" id="spuCombo">
       <input type="text" id="selSpu" class="search-box combo-input"
@@ -148,8 +168,23 @@
 
 <div class="foot">数据来源：首茂IPS 即时库存 + 零售单 ｜ stocktree.json / inventory.json</div>
 
+<dialog class="catalog-modal" id="catalogModal">
+  <div class="catalog-head"><strong>库存目录手动维护</strong><button class="catalog-btn" id="catalogClose">关闭</button></div>
+  <div class="catalog-body">
+    <div class="catalog-grid">
+      <div class="catalog-field"><label>操作</label><select id="catalogAction"><option value="remove-category">删除品类</option><option value="add-spu">新增 SPU</option><option value="remove-spu">删除 SPU</option><option value="add-sku">在 SPU 内新增 SKU</option><option value="remove-sku">从 SPU 删除 SKU</option></select></div>
+      <div class="catalog-field"><label>品类</label><select id="catalogCategory"></select></div>
+      <div class="catalog-field"><label>SPU</label><input id="catalogSpu" list="catalogSpuList" placeholder="选择现有 SPU 或输入新名称"><datalist id="catalogSpuList"></datalist></div>
+      <div class="catalog-field"><label>SKU 商品编码</label><input id="catalogSku" list="catalogSkuList" placeholder="新增/删除 SKU 时填写"><datalist id="catalogSkuList"></datalist></div>
+      <div class="catalog-field wide" style="grid-column:1/-1"><label>SKU 名称</label><input id="catalogSkuName" placeholder="可填写完整商品名称"></div>
+    </div>
+    <div class="catalog-note" id="catalogNote">删除品类、SPU 或 SKU 后，库存查询、库存金额、商品分析、新品首销及导出会使用同一份目录。变更单独保存，不修改原始上传文件。</div>
+  </div>
+  <div class="catalog-foot"><button class="catalog-btn danger" id="catalogReset">恢复原始目录</button><button class="catalog-btn primary" id="catalogSave">保存并同步</button></div>
+</dialog>
+
 <script>
-let TREE=null, INV=null;
+let TREE=null, INV=null, ALL_STORES=[];
 const FIVE=['手机','穿戴','平板','电脑','音频'];
 function fmtInt(v){ return v==null?'-':Math.round(v).toLocaleString('zh-CN'); }
 function fmtDays(v){ return v==null?'∞':v.toLocaleString('zh-CN',{maximumFractionDigits:1}); }
@@ -162,6 +197,9 @@ function fillSel(sel, items, getVal, getText, placeholder){
 }
 let SPU_IDX = '';   // 当前 SPU 下标(字符串), 由可搜索下拉维护; '' = 未选
 function selectedStore(){ return document.getElementById('selStore').value; }
+function selectedStoreType(){ return document.getElementById('selStoreType').value; }
+function storeAllowed(name){ const type=selectedStoreType(); return !type || ((INV&&INV.storeTypes)||{})[name]===type; }
+function hasStoreScope(){ return !!(selectedStore() || selectedStoreType()); }
 function curCat(){ const i=document.getElementById('selCat').value; return i===''?null:TREE.categories[+i]; }
 function curSpu(){ const c=curCat(); return !c||SPU_IDX===''?null:c.spus[+SPU_IDX]; }
 function setSpuIdx(i){
@@ -170,10 +208,29 @@ function setSpuIdx(i){
   document.getElementById('selSpu').value = p ? p.spu : '';
 }
 function curSku(){ const p=curSpu(); const i=document.getElementById('selSku').value; return !p||i===''?null:p.skus[+i]; }
-function scopedStoreDetail(r){ const store=selectedStore(); return store?(r.storeDetail||[]).filter(d=>d.store===store):(r.storeDetail||[]); }
+function scopedStoreDetail(r){ const store=selectedStore(); return (r.storeDetail||[]).filter(d=>storeAllowed(d.store)&&(!store||d.store===store)); }
 function scopedStock(r){ return scopedStoreDetail(r).reduce((sum,d)=>sum+(d.stock||0),0); }
 function scopedSold(r){ return scopedStoreDetail(r).reduce((sum,d)=>sum+(d.sold28||0),0); }
-function skuMatchesStore(r){ return !selectedStore()||scopedStoreDetail(r).length>0; }
+function skuMatchesStore(r){ return (!selectedStore()&&!selectedStoreType())||scopedStoreDetail(r).length>0; }
+function calcDio(stock,sold){ return sold>0 ? Math.round(stock/(sold/28)*10)/10 : null; }
+function scopedMetrics(r){
+  const scoped=hasStoreScope(), detail=scopedStoreDetail(r);
+  const stock=scoped ? detail.reduce((sum,d)=>sum+(Number(d.stock)||0),0)
+    : Number(r.totalStock!=null?r.totalStock:r.stock)||0;
+  const sold28=scoped ? detail.reduce((sum,d)=>sum+(Number(d.sold28)||0),0)
+    : Number(r.sold28)||0;
+  return {stock,sold28,dio:calcDio(stock,sold28),hqStock:Number(r.hqStock)||0,
+    stores:detail.filter(d=>(Number(d.stock)||0)>0).length};
+}
+function scopedChannels(r){
+  if(!hasStoreScope()) return r.channels||[];
+  const totals={};
+  scopedStoreDetail(r).forEach(d=>(d.channel||[]).forEach(c=>{
+    const name=String(c.channel||'未标注');
+    totals[name]=(totals[name]||0)+(Number(c.stock)||0);
+  }));
+  return Object.entries(totals).map(([channel,stock])=>({channel,stock})).sort((a,b)=>b.stock-a.stock);
+}
 /* SPU 可搜索下拉: 输入过滤, 首屏最多渲染 SPU_COMBO_CAP 个匹配项 */
 const SPU_COMBO_CAP = 50;
 let SPU_COMBO_OPEN = false;
@@ -229,9 +286,8 @@ function renderOverview(){
     <th>#</th><th>SPU（产品族）</th><th class="num">SKU数</th><th class="num">总可售库存</th><th class="num">近4周销量</th><th class="num">周转天数</th></tr></thead><tbody>`+
     c.spus.map((p,i)=>{
       const skus=p.skus.filter(skuMatchesStore);
-      const stock=selectedStore()?skus.reduce((a,r)=>a+scopedStock(r),0):(p.totalStock!=null?p.totalStock:p.skus.reduce((a,r)=>a+r.stock,0));
-      const sold=selectedStore()?skus.reduce((a,r)=>a+scopedSold(r),0):(p.sold28!=null?p.sold28:p.skus.reduce((a,r)=>a+r.sold28,0));
-      return `<tr class="rowlink" data-spu="${i}"><td>${i+1}</td><td>${esc(p.spu)}</td><td class="num">${skus.length}</td><td class="num">${fmtInt(stock)}</td><td class="num">${fmtInt(sold)}</td><td class="num">${dioHtml(p.dio)}</td></tr>`;
+      const metrics=scopedMetrics(p);
+      return `<tr class="rowlink" data-spu="${i}"><td>${i+1}</td><td>${esc(p.spu)}</td><td class="num">${skus.length}</td><td class="num">${fmtInt(metrics.stock)}</td><td class="num">${fmtInt(metrics.sold28)}</td><td class="num">${dioHtml(metrics.dio)}</td></tr>`;
     }).join('')+`</tbody></table></div>`;
   ov.querySelectorAll('tr.rowlink').forEach(tr=>tr.addEventListener('click',()=>{
     setSpuIdx(tr.dataset.spu);
@@ -245,23 +301,24 @@ function renderSpuDetail(){
   if(!p){ sd.style.display='none'; renderOverview(); return; }
   document.getElementById('overview').innerHTML='';
   sd.style.display='block';
-  const chans = p.channels||[];
+  const metrics=scopedMetrics(p);
+  const chans = scopedChannels(p);
   const ctot = chans.reduce((a,c)=>a+c.stock,0)||1;
   const chanHtml = chans.length
     ? chans.map(c=>`<div class="bar-row"><div class="bl" title="${esc(c.channel)}">${esc(shortChan(c.channel))}</div><div class="bt"><div class="bf" style="width:${Math.min(100,c.stock/ctot*100).toFixed(1)}%"></div></div><div class="bv">${fmtInt(c.stock)} 件 · ${(c.stock/ctot*100).toFixed(1)}%</div></div>`).join('')
     : '<div style="font-size:12px;color:#5c6b82">无渠道数据</div>';
   const storeRows = scopedStoreDetail(p).map((d,i)=>
     d.stock<=0
-      ? `<tr class="zero-stock"><td>${i+1}</td><td>${esc(d.store)}</td><td class="num"><span class="z">0</span></td><td class="num">${fmtInt(d.sold28)}</td><td class="num">${dioHtml(d.dio)}</td></tr>`
-      : `<tr><td>${i+1}</td><td>${esc(d.store)}</td><td class="num">${fmtInt(d.stock)}</td><td class="num">${fmtInt(d.sold28)}</td><td class="num">${dioHtml(d.dio)}</td></tr>`).join('');
-  const skuRows = p.skus.filter(skuMatchesStore).map((r,i)=>`<tr class="rowlink" data-sku="${p.skus.indexOf(r)}"><td>${i+1}</td><td class="pname hit">${esc(r.name)}</td><td>${esc(r.sku)}</td><td class="num">${fmtInt(selectedStore()?scopedStock(r):r.stock)}</td><td class="num">${fmtInt(selectedStore()?scopedSold(r):r.sold28)}</td></tr>`).join('');
+      ? `<tr class="zero-stock"><td>${i+1}</td><td>${esc(d.store)}</td><td class="num"><span class="z">0</span></td><td class="num">${fmtInt(d.sold28)}</td><td class="num">${dioHtml(calcDio(Number(d.stock)||0,Number(d.sold28)||0))}</td></tr>`
+      : `<tr><td>${i+1}</td><td>${esc(d.store)}</td><td class="num">${fmtInt(d.stock)}</td><td class="num">${fmtInt(d.sold28)}</td><td class="num">${dioHtml(calcDio(Number(d.stock)||0,Number(d.sold28)||0))}</td></tr>`).join('');
+  const skuRows = p.skus.filter(skuMatchesStore).map((r,i)=>`<tr class="rowlink" data-sku="${p.skus.indexOf(r)}"><td>${i+1}</td><td class="pname hit">${esc(r.name)}</td><td>${esc(r.sku)}</td><td class="num">${fmtInt(hasStoreScope()?scopedStock(r):r.stock)}</td><td class="num">${fmtInt(hasStoreScope()?scopedSold(r):r.sold28)}</td></tr>`).join('');
   sd.innerHTML = `
     <div class="sku-info">
       <div class="mini"><div class="label">SPU（产品族）</div><div class="value small">${esc(p.spu)}</div></div>
-      <div class="mini"><div class="label">总可售库存（件）</div><div class="value">${fmtInt(p.totalStock)}</div></div>
-      <div class="mini"><div class="label">近4周销量（件）</div><div class="value">${fmtInt(p.sold28)}</div></div>
-      <div class="mini"><div class="label">周转天数</div><div class="value">${p.dio==null?'—':p.dio}</div></div>
-      ${p.hqStock?`<div class="mini"><div class="label">总部库存（件）</div><div class="value">${fmtInt(p.hqStock)}</div></div>`:''}
+      <div class="mini"><div class="label">总可售库存（件）</div><div class="value">${fmtInt(metrics.stock)}</div></div>
+      <div class="mini"><div class="label">近4周销量（件）</div><div class="value">${fmtInt(metrics.sold28)}</div></div>
+      <div class="mini"><div class="label">周转天数（DOS）</div><div class="value">${metrics.dio==null?'—':metrics.dio}</div></div>
+      <div class="mini"><div class="label">总部库存（件）</div><div class="value">${fmtInt(metrics.hqStock)}</div></div>
     </div>
     <div class="spu-sec">渠道分布</div>${chanHtml}
     <div class="spu-sec">门店明细</div>
@@ -282,11 +339,13 @@ function renderDetail(){
   ov.innerHTML='';
   dt.style.display='block';
   const scoped=scopedStoreDetail(r);
+  const metrics=scopedMetrics(r);
   const minis = [
     {label:'商品全名', value:r.name, small:true},
-    {label:'总可售库存（件）', value:fmtInt(selectedStore()?scopedStock(r):r.stock)},
-    {label:'有货门店数（家）', value:fmtInt(selectedStore()?scoped.filter(d=>d.stock>0).length:r.stores)},
-    {label:'近4周销量（件）', value:fmtInt(selectedStore()?scopedSold(r):r.sold28)},
+    {label:'总可售库存（件）', value:fmtInt(metrics.stock)},
+    {label:'近4周销量（件）', value:fmtInt(metrics.sold28)},
+    {label:'周转天数（DOS）', value:metrics.dio==null?'—':metrics.dio},
+    {label:'总部库存（件）', value:fmtInt(metrics.hqStock)},
   ];
   document.getElementById('skuInfo').innerHTML = minis.map(m=>
     `<div class="mini"><div class="label">${m.label}</div><div class="value ${m.small?'small':''}">${esc(m.value)}</div></div>`).join('');
@@ -299,7 +358,7 @@ function renderDetail(){
   const hqLine = document.getElementById('hqLine');
   if(r.hqStock){
     const det = (r.hqDetail||[]).map(d=>`${esc(d.org)} ${fmtInt(d.stock)} 件`).join(' ｜ ');
-    hqLine.innerHTML = `总部库存：<b style="color:#fff">${fmtInt(r.hqStock)}</b> 件` + (det?`（${det}）`:'');
+    hqLine.innerHTML = `总部库存明细：<b style="color:#1d2533">${fmtInt(r.hqStock)}</b> 件` + (det?`（${det}）`:'');
     hqLine.style.display = 'block';
   } else { hqLine.style.display = 'none'; }
 }
@@ -308,7 +367,7 @@ function shortChan(n){
 }
 function renderChanMatrix(r){
   const box = document.getElementById('chanMatrix');
-  const chans = (r.channels||[]).map(c=>c.channel);
+  const chans = scopedChannels(r).map(c=>c.channel);
   if(chans.length<=1){
     const only = chans[0]||'未标注';
     box.innerHTML = `<div style="font-size:12px;color:#7d8ca3">全部来自：<span style="color:#60a5fa">${esc(only)}</span></div>`;
@@ -333,6 +392,13 @@ function onStoreChange(){
   else if(curSpu()) renderSpuDetail();
   else renderOverview();
 }
+function refreshStoreOptions(){
+  const sel=document.getElementById('selStore'), current=sel.value;
+  const allowed=(ALL_STORES||[]).filter(storeAllowed);
+  sel.innerHTML='<option value="">全部门店</option>'+allowed.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  sel.value=allowed.includes(current)?current:'';
+}
+function onStoreTypeChange(){ refreshStoreOptions(); onStoreChange(); }
 function onCatChange(){
   setSpuIdx('');
   fillSel(document.getElementById('selSku'), [], null, null, '选择 SKU…');
@@ -394,6 +460,44 @@ function renderCatBoards(){
   }).join('');
 }
 
+function catalogCategory(){return (TREE&&TREE.categories||[]).find(c=>c.cat===document.getElementById('catalogCategory').value)}
+function renderCatalogInputs(){
+  const action=document.getElementById('catalogAction').value;
+  const catSel=document.getElementById('catalogCategory'),current=catSel.value;
+  catSel.innerHTML=(TREE&&TREE.categories||[]).map(c=>`<option value="${esc(c.cat)}">${esc(c.cat)}</option>`).join('');
+  if([...catSel.options].some(o=>o.value===current))catSel.value=current;
+  const cat=catalogCategory(),spus=(cat&&cat.spus)||[],spuInput=document.getElementById('catalogSpu');
+  document.getElementById('catalogSpuList').innerHTML=spus.map(s=>`<option value="${esc(s.spu)}"></option>`).join('');
+  const spu=spus.find(s=>s.spu===spuInput.value);
+  document.getElementById('catalogSkuList').innerHTML=((spu&&spu.skus)||[]).map(s=>`<option value="${esc(s.sku)}">${esc(s.name)}</option>`).join('');
+  const categoryOnly=action==='remove-category',spuAction=action==='add-spu'||action==='remove-spu';
+  spuInput.disabled=categoryOnly;
+  document.getElementById('catalogSku').disabled=categoryOnly||spuAction;
+  document.getElementById('catalogSkuName').disabled=categoryOnly||spuAction;
+}
+function refreshTreeUi(){
+  const storeSet=new Set();
+  (TREE.categories||[]).forEach(c=>(c.spus||[]).forEach(p=>(p.skus||[]).forEach(r=>(r.storeDetail||[]).forEach(d=>{if(d.store)storeSet.add(d.store)}))));
+  ALL_STORES=[...storeSet].sort();refreshStoreOptions();
+  fillSel(document.getElementById('selCat'),TREE.categories,null,c=>c.cat,'选择大类…');
+  document.getElementById('selCat').value=TREE.categories.length?'0':'';setSpuIdx('');onCatChange();
+}
+async function catalogRequest(payload){
+  const r=await fetch('/api/inventory-catalog',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),d=await r.json();
+  if(!r.ok||!d.ok)throw new Error(d.error||'目录变更失败');TREE=d.tree;refreshTreeUi();renderCatalogInputs();return d;
+}
+function initCatalogManager(){
+  const modal=document.getElementById('catalogModal');
+  document.getElementById('catalogManage').addEventListener('click',()=>{renderCatalogInputs();modal.showModal()});
+  document.getElementById('catalogClose').addEventListener('click',()=>modal.close());
+  document.getElementById('catalogAction').addEventListener('change',renderCatalogInputs);
+  document.getElementById('catalogCategory').addEventListener('change',()=>{document.getElementById('catalogSpu').value='';document.getElementById('catalogSku').value='';document.getElementById('catalogSkuName').value='';renderCatalogInputs()});
+  document.getElementById('catalogSpu').addEventListener('input',renderCatalogInputs);
+  document.getElementById('catalogSku').addEventListener('change',()=>{const cat=catalogCategory(),spu=(cat&&cat.spus||[]).find(s=>s.spu===document.getElementById('catalogSpu').value),sku=(spu&&spu.skus||[]).find(s=>String(s.sku)===document.getElementById('catalogSku').value);if(sku)document.getElementById('catalogSkuName').value=sku.name||''});
+  document.getElementById('catalogSave').addEventListener('click',async()=>{const payload={action:document.getElementById('catalogAction').value,category:document.getElementById('catalogCategory').value,spu:document.getElementById('catalogSpu').value.trim(),sku:document.getElementById('catalogSku').value.trim(),name:document.getElementById('catalogSkuName').value.trim()};if(!confirm('确认保存该目录变更并同步到所有相关看板？'))return;try{await catalogRequest(payload);alert('目录已保存并同步');modal.close()}catch(e){alert(e.message)}});
+  document.getElementById('catalogReset').addEventListener('click',async()=>{if(!confirm('确认清除全部手动目录变更并恢复原始数据？'))return;try{await catalogRequest({action:'reset'});alert('已恢复原始目录');modal.close()}catch(e){alert(e.message)}});
+}
+
 async function boot(){
   try{
     const [r1,r2] = await Promise.all([
@@ -406,10 +510,11 @@ async function boot(){
     document.getElementById('snapshot').textContent = TREE.snapshotAt||'-';
     const storeSet=new Set();
     TREE.categories.forEach(c=>(c.spus||[]).forEach(p=>(p.skus||[]).forEach(r=>(r.storeDetail||[]).forEach(d=>{if(d.store) storeSet.add(d.store)}))));
-    const stores=[...storeSet].sort();
+    ALL_STORES=[...storeSet].sort();
     const storeSel=document.getElementById('selStore');
-    storeSel.innerHTML='<option value="">全部门店</option>'+stores.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    refreshStoreOptions();
     storeSel.addEventListener('change', onStoreChange);
+    document.getElementById('selStoreType').addEventListener('change', onStoreTypeChange);
     fillSel(document.getElementById('selCat'), TREE.categories, null, c=>c.cat, '选择大类…');
     document.getElementById('selCat').value = '0';
     onCatChange();
@@ -429,6 +534,7 @@ async function boot(){
     document.addEventListener('click', e=>{ if(!e.target.closest('#spuCombo')) closeSpuCombo(); });
     document.getElementById('selSku').addEventListener('change', onSkuChange);
     document.getElementById('searchBox').addEventListener('input', onSearch);
+    initCatalogManager();
   }
   if(INV) renderCatBoards();
 }

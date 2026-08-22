@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>商品分析</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d1420; color:#dbe4f0; font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif; padding:16px; min-height:100vh; }
+  .nav { display:flex; gap:16px; font-size:13px; margin-bottom:12px; flex-wrap:wrap; }
+  .nav a { color:#7d8ca3; text-decoration:none; padding:4px 10px; border-radius:6px; border:1px solid #1f2c42; }
+  .nav a.cur { color:#fff; background:#16202f; border-color:#2563eb; }
+  .nav a:hover { color:#dbe4f0; }
+  .auto-sw { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:#7d8ca3; flex-wrap:wrap; }
+  .switch { position:relative; width:34px; height:18px; display:inline-block; flex-shrink:0; }
+  .switch input { display:none; }
+  .switch i { position:absolute; inset:0; background:#1f2c42; border-radius:18px; transition:.2s; cursor:pointer; }
+  .switch i::after { content:""; position:absolute; width:14px; height:14px; left:2px; top:2px; background:#7d8ca3; border-radius:50%; transition:.2s; }
+  .switch input:checked + i { background:#059669; }
+  .switch input:checked + i::after { transform:translateX(16px); background:#fff; }
+  .sw-hint { font-size:11px; color:#f59e0b; display:none; }
+  .sw-hint.show { display:inline; }
+  .header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .header h1 { font-size:19px; font-weight:600; color:#fff; letter-spacing:1px; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#34d399; margin-right:8px; box-shadow:0 0 8px #34d399; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+  .meta { font-size:12px; color:#7d8ca3; }
+  .card { background:#121a28; border:1px solid #1f2c42; border-radius:12px; padding:13px 15px; margin-top:10px; }
+  .card h2 { font-size:14px; font-weight:600; color:#a8b8cc; margin-bottom:10px; display:flex; align-items:center; }
+  .card h2 .tag { font-size:11px; color:#5c6b82; font-weight:400; margin-left:8px; flex:1; }
+  .exp-btn { background:#16202f; border:1px solid #1f2c42; color:#7d8ca3; font-size:11px; border-radius:6px; padding:3px 10px; cursor:pointer; text-decoration:none; white-space:nowrap; }
+  .exp-btn:hover { color:#fff; border-color:#2563eb; }
+  .date-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; font-size:12px; color:#7d8ca3; }
+  input[type=date] { background:#0d1420; color:#dbe4f0; border:1px solid #1f2c42; border-radius:8px; padding:6px 10px; font-size:13px; color-scheme:dark; }
+  .btn { background:#2563eb; color:#fff; border:none; border-radius:8px; padding:7px 16px; font-size:13px; cursor:pointer; }
+  .btn:hover { background:#3b82f6; }
+  .btn.ghost { background:#16202f; border:1px solid #1f2c42; color:#a8b8cc; padding:5px 12px; font-size:12px; }
+  .btn.ghost.cur { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .cat-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .cat-tabs button { background:#16202f; border:1px solid #1f2c42; color:#a8b8cc; border-radius:8px; padding:6px 16px; font-size:13px; cursor:pointer; }
+  .cat-tabs button.cur { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .cat-tabs button em { font-style:normal; font-size:11px; opacity:.75; margin-left:6px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tscroll { overflow-x:auto; max-height:420px; overflow-y:auto; }
+  table { width:100%; border-collapse:collapse; font-size:12px; min-width:340px; }
+  th { text-align:left; color:#5c6b82; font-weight:400; padding:4px 6px; border-bottom:1px solid #1f2c42; white-space:nowrap; position:sticky; top:0; background:#121a28; }
+  td { padding:5px 6px; border-bottom:1px solid #182234; color:#c4d0e0; vertical-align:middle; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.pname { white-space:normal; word-break:break-word; min-width:160px; line-height:1.5; }
+  tr.rowlink { cursor:pointer; }
+  tr.rowlink:hover td { background:#16202f; }
+  tr.sel td { background:#1a2a45; }
+  .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:10px; }
+  .mini { background:linear-gradient(145deg,#16202f,#121a28); border:1px solid #1f2c42; border-radius:10px; padding:10px 12px; }
+  .mini .label { font-size:11px; color:#7d8ca3; margin-bottom:4px; }
+  .mini .value { font-size:18px; font-weight:700; color:#fff; font-variant-numeric:tabular-nums; }
+  .mini .sub { font-size:11px; color:#5c6b82; margin-top:3px; }
+  .prof-head { font-size:15px; color:#fff; font-weight:600; margin-bottom:10px; line-height:1.6; }
+  .prof-head .dim { font-size:12px; color:#7d8ca3; font-weight:400; margin-left:8px; }
+  .gran-bar { display:flex; gap:6px; margin-bottom:8px; }
+  canvas { width:100%; height:260px; display:block; }
+  .bar-row { display:flex; align-items:center; gap:8px; margin:4px 0; font-size:12px; }
+  .bar-row .bl { width:170px; color:#a8b8cc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:0; }
+  .bar-row .bt { flex:1; height:10px; background:#182234; border-radius:5px; overflow:hidden; }
+  .bar-row .bf { height:100%; background:#2563eb; border-radius:5px; }
+  .bar-row .bv { width:80px; text-align:right; color:#c4d0e0; font-variant-numeric:tabular-nums; flex-shrink:0; }
+  .g { color:#34d399; } .y { color:#f59e0b; } .r { color:#f87171; } .n { color:#4b5a72; }
+  .sub-title { font-size:13px; color:#a8b8cc; margin:14px 0 6px; }
+  .lg i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; }
+  .lg { color:#a8b8cc; white-space:nowrap; margin-right:12px; }
+  tr.drill-sub td { background:#0d1420; padding:8px 12px; }
+  .drill-cat { border:1px solid #1f2c42; border-radius:8px; margin:6px 0; }
+  .drill-cat .dc-h { padding:7px 10px; cursor:pointer; font-size:12px; color:#a8b8cc; display:flex; justify-content:space-between; }
+  .drill-cat .dc-h:hover { color:#fff; }
+  .drill-cat .dc-b { display:none; padding:0 10px 8px; }
+  .drill-cat.open .dc-b { display:block; }
+  th.sortable { cursor:pointer; }
+  th.sortable:hover { color:#a8b8cc; }
+  .foot { margin-top:14px; font-size:11px; color:#43516a; text-align:center; }
+  .hint { font-size:12px; color:#5c6b82; padding:8px 0; }
+  @media (max-width: 900px) { .kpi-row { grid-template-columns:repeat(2,1fr); } .two-col { grid-template-columns:1fr; } }
+  @media (max-width: 700px) { body { padding:10px; } }
+  /* 同行高亮: 悬停(浅) + 点击锁定(深一档); !important 覆盖斑马纹/+8/选中行背景; 锁定规则在后, 悬停时仍保持锁定色 */
+  tbody tr:hover td { background:rgba(45,212,191,.12) !important; }
+  tbody tr.hl td { background:rgba(45,212,191,.22) !important; }
+</style>
+<link rel="stylesheet" href="apple.css?v=20260727-theme2">
+<script src="public-runtime.js?v=20260822-public1"></script>
+</head>
+<body>
+<div class="nav">
+  <a href="index.html">零售看板</a>
+  <a href="inventory.html">库存看板</a>
+  <a href="stock.html">库存查询</a>
+  <a href="finance.html">库存金额</a>
+  <a href="product.html" class="cur">商品分析</a><a href="sales.html">产品销售</a>
+  <a href="insights.html">经营分析</a>
+<a href="target.html?v=20260727-entry2">达成看板</a>
+  <a href="launch.html">新品首销</a>
+  <a href="demo.html">样机管理</a>
+<a href="upload.html?v=20260727-entry2">手动上传</a>
+  <a href="guide.html">使用指南</a>
+  <span class="auto-sw">自动获取数据 <label class="switch"><input type="checkbox" id="autoRefresh"><i></i></label><span class="sw-hint" id="arHint">已关闭，数据将不再自动更新，可手动上传</span></span>
+</div>
+<div class="header">
+  <h1><span class="dot"></span>商品分析</h1>
+  <div class="meta" id="rangeMeta">-</div>
+</div>
+
+<div class="date-bar">
+  日期 <input type="date" id="dFrom"> ~ <input type="date" id="dTo">
+  <button class="btn" id="btnQuery">查询</button>
+</div>
+<div class="cat-tabs" id="viewTabs">
+  <button data-v="browse" class="cur">销售浏览</button>
+  <button data-v="cat">品类分析</button>
+  <button data-v="store">门店分析</button>
+</div>
+
+<!-- A. 商品销售浏览 -->
+<div id="view-browse">
+<div class="card" style="margin-top:0">
+  <h2>商品销售浏览<span class="tag">大类 → SPU → SKU，点击行查看商品简历</span></h2>
+  <div class="cat-tabs" id="catTabs"></div>
+  <div class="two-col">
+    <div>
+      <div class="sub-title" style="margin-top:0">SPU（产品族）</div>
+      <div class="tscroll"><table id="spuTable"><thead><tr>
+        <th>#</th><th>SPU</th><th class="num">销售额</th><th class="num">销量</th><th class="num">占比</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+    <div>
+      <div class="sub-title" style="margin-top:0">SKU（点击 SPU 后显示）</div>
+      <div class="tscroll"><table id="skuTable"><thead><tr>
+        <th>#</th><th>商品名称</th><th class="num">销售额</th><th class="num">销量</th><th class="num">占比</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+</div><!-- /view-browse -->
+
+<!-- A2. 品类分析 -->
+<div id="view-cat" style="display:none">
+<div class="card" style="margin-top:0">
+  <h2>品类分析<span class="tag" id="anaCatTag">大类→SPU，环比=前一等长周期</span></h2>
+  <div class="two-col" style="margin-bottom:6px">
+    <div>
+      <div class="sub-title" style="margin-top:0">大类占比（销售额）</div>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+        <div id="anaDonut"></div>
+        <div id="anaLegend" style="flex:1;min-width:170px;font-size:12px;line-height:2"></div>
+      </div>
+    </div>
+    <div>
+      <div class="sub-title" style="margin-top:0">大类汇总</div>
+      <div class="tscroll"><table id="anaCatTable"><thead><tr>
+        <th>大类</th><th class="num">销售额</th><th class="num">销量</th><th class="num">占比</th><th class="num">环比</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div class="sub-title">SPU 排行 TOP20<span style="color:#5c6b82;font-weight:400">（点行看商品简历，点 ▶ 下钻 SKU）</span></div>
+  <div class="cat-tabs" id="anaCatTabs"></div>
+  <div class="tscroll" style="max-height:480px"><table id="anaSpuTable"><thead><tr>
+    <th>#</th><th>SPU</th><th class="num">销售额</th><th class="num">销量</th><th class="num">占比</th><th class="num">环比</th><th></th>
+  </tr></thead><tbody></tbody></table></div>
+</div>
+</div><!-- /view-cat -->
+
+<!-- A3. 门店分析 -->
+<div id="view-store" style="display:none">
+<div class="card" style="margin-top:0">
+  <h2>门店分析<span class="tag">门店排行 / 点击门店下钻该店结构</span><a class="exp-btn" id="btnMatrixExp" href="#">导出矩阵Excel</a></h2>
+  <div class="two-col">
+    <div>
+      <div class="sub-title" style="margin-top:0">门店排行（销售额）</div>
+      <div class="tscroll" style="max-height:460px"><table id="storeRankTable"><thead><tr>
+        <th>#</th><th>门店</th><th class="num">销售额</th><th class="num">销量</th><th class="num">环比</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+    <div>
+      <div class="sub-title" style="margin-top:0" id="storeDrillTitle">门店下钻</div>
+      <div id="storeDrill"><div class="hint">点击左侧门店行，查看该店 大类 → SPU 销售结构</div></div>
+    </div>
+  </div>
+  <div class="sub-title">门店 × 大类 销售矩阵（销售额，万元；点表头按该列排序）</div>
+  <div class="tscroll" style="max-height:460px"><table id="matrixTable"><thead></thead><tbody></tbody></table></div>
+</div>
+</div><!-- /view-store -->
+
+<!-- B. 商品简历 -->
+<div class="card" id="profCard" style="display:none">
+  <h2>商品简历<span class="tag" id="profRange"></span><a class="exp-btn" id="btnExport" href="#">导出Excel</a></h2>
+  <div class="prof-head" id="profHead"></div>
+  <div class="kpi-row" id="profKpi"></div>
+  <div class="gran-bar" id="granBar">
+    <button class="btn ghost" data-by="quarter">季</button>
+    <button class="btn ghost" data-by="month">月</button>
+    <button class="btn ghost" data-by="week">周</button>
+    <button class="btn ghost cur" data-by="day">日</button>
+  </div>
+  <canvas id="trendCv"></canvas>
+  <div class="two-col" style="margin-top:14px">
+    <div>
+      <div class="sub-title" style="margin-top:0">月度对比</div>
+      <div class="tscroll"><table id="monthTable"><thead><tr>
+        <th>月份</th><th class="num">销量</th><th class="num">销售额</th><th class="num">环比</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+    <div>
+      <div class="sub-title" style="margin-top:0">门店分布 TOP20</div>
+      <div class="tscroll"><table id="storeTable"><thead><tr>
+        <th>#</th><th>门店</th><th class="num">销量</th><th class="num">销售额</th>
+      </tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+  <div id="stockBlock"></div>
+</div>
+
+<div class="foot">数据来源：零售明细（内存缓存）× stocktree.json ｜ /api/product-tree · /api/product-profile</div>
+
+<script>
+let TREE=null, CUR_CAT=null, CUR_SPU=null, CUR_SKU=null, PROF=null, BY='day';
+let PROF_PARAMS=null, VIEW='browse', ANA_CAT=null, ANA_STORE=null, MAT_SORT={col:-1,asc:false};
+const PALETTE=['#1264a3','#2f7d4a','#d27b0b','#c94a45','#248a9a','#667085','#7d6b4f','#8a94a6'];
+function fmtInt(v){ return v==null?'—':Math.round(v).toLocaleString('zh-CN'); }
+function fmtWan(v){ if(v==null) return '—'; return (v/10000).toLocaleString('zh-CN',{maximumFractionDigits:1})+'万'; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function shortChan(n){ return String(n||'').replace(/(通信科技|科技|通信)?有限公司.*$/,'')||n; }
+function pctStr(v){ return v==null?'<span class="n">—</span>':v+'%'; }
+
+/* ---------- A. 浏览区 ---------- */
+function monthStart(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01'; }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+async function loadTree(){
+  const f=document.getElementById('dFrom').value, t=document.getElementById('dTo').value;
+  const btn=document.getElementById('btnQuery');
+  const meta=document.getElementById('rangeMeta');
+  btn.disabled=true; btn.textContent='加载中…';
+  meta.textContent='正在读取最新零售数据，首次加载可能需要几十秒';
+  document.querySelector('#spuTable tbody').innerHTML='<tr><td colspan="5" style="color:#7d8ca3">数据加载中…</td></tr>';
+  document.querySelector('#skuTable tbody').innerHTML='<tr><td colspan="5" style="color:#7d8ca3">请稍候</td></tr>';
+  try{
+    const r = await fetch(`/api/product-tree?from=${f}&to=${t}&_=${Date.now()}`,{cache:'no-store'});
+    const d = await r.json();
+    if(!r.ok || d.error) throw new Error(d.error || ('HTTP '+r.status));
+    TREE = d;
+    meta.textContent = `窗口 ${TREE.from} ~ ${TREE.to}`;
+    if(!TREE.cats || !TREE.cats.length){
+      document.getElementById('catTabs').innerHTML='';
+      document.querySelector('#spuTable tbody').innerHTML='<tr><td colspan="5" style="color:#f59e0b">当前日期范围没有销售数据</td></tr>';
+      document.querySelector('#skuTable tbody').innerHTML='<tr><td colspan="5" style="color:#5c6b82">请调整日期后查询</td></tr>';
+      return;
+    }
+    renderCats();
+    const i = TREE.cats.findIndex(c=>c.cat==='手机');
+    selectCat(i>=0?i:0);
+  }catch(e){
+    TREE=null;
+    meta.textContent='加载失败：'+e.message;
+    document.querySelector('#spuTable tbody').innerHTML='<tr><td colspan="5" style="color:#ef4444">数据加载失败，请点击查询重试</td></tr>';
+    document.querySelector('#skuTable tbody').innerHTML='<tr><td colspan="5" style="color:#5c6b82">暂无数据</td></tr>';
+  }finally{
+    btn.disabled=false; btn.textContent='查询';
+  }
+}
+function renderCats(){
+  document.getElementById('catTabs').innerHTML = TREE.cats.map((c,i)=>
+    `<button data-i="${i}" class="${i===CUR_CAT?'cur':''}">${esc(c.cat)}<em>${fmtWan(c.amount)}</em></button>`).join('');
+  document.querySelectorAll('#catTabs button').forEach(b=>b.addEventListener('click',()=>selectCat(+b.dataset.i)));
+}
+function selectCat(i){
+  CUR_CAT=i; CUR_SPU=null; CUR_SKU=null;
+  renderCats(); renderSpus(); renderSkus();
+}
+function renderSpus(){
+  const c = TREE.cats[CUR_CAT];
+  const tb = document.querySelector('#spuTable tbody');
+  tb.innerHTML = c.spus.map((p,i)=>{
+    const share = c.amount ? (p.amount/c.amount*100).toFixed(1) : '—';
+    return `<tr class="rowlink ${i===CUR_SPU?'sel':''}" data-i="${i}"><td>${i+1}</td><td class="pname">${esc(p.spu)}</td><td class="num">${fmtWan(p.amount)}</td><td class="num">${fmtInt(p.qty)}</td><td class="num">${share}%</td></tr>`;
+  }).join('');
+  tb.querySelectorAll('tr').forEach(tr=>tr.addEventListener('click',()=>{ selectSpu(+tr.dataset.i); }));
+}
+function selectSpu(i){
+  CUR_SPU=i; CUR_SKU=null;
+  renderSpus(); renderSkus();
+  const p = TREE.cats[CUR_CAT].spus[i];
+  loadProfile({spu:p.spu});
+}
+function renderSkus(){
+  const tb = document.querySelector('#skuTable tbody');
+  if(CUR_SPU==null){ tb.innerHTML='<tr><td colspan="5" style="color:#5c6b82">点击左侧 SPU 行查看明细</td></tr>'; return; }
+  const p = TREE.cats[CUR_CAT].spus[CUR_SPU];
+  tb.innerHTML = p.skus.map((s,i)=>{
+    const share = p.amount ? (s.amount/p.amount*100).toFixed(1) : '—';
+    return `<tr class="rowlink ${i===CUR_SKU?'sel':''}" data-i="${i}"><td>${i+1}</td><td class="pname">${esc(s.name)}</td><td class="num">${fmtWan(s.amount)}</td><td class="num">${fmtInt(s.qty)}</td><td class="num">${share}%</td></tr>`;
+  }).join('');
+  tb.querySelectorAll('tr').forEach(tr=>tr.addEventListener('click',()=>{
+    CUR_SKU=+tr.dataset.i; renderSkus();
+    loadProfile({sku:p.skus[CUR_SKU].sku});
+  }));
+}
+
+/* ---------- B. 商品简历 ---------- */
+function selParams(){
+  return CUR_SKU!=null
+    ? {sku: TREE.cats[CUR_CAT].spus[CUR_SPU].skus[CUR_SKU].sku}
+    : {spu: TREE.cats[CUR_CAT].spus[CUR_SPU].spu};
+}
+async function loadProfile(extra){
+  const base = (extra && (extra.sku || extra.spu)) ? {} : selParams();
+  const q = Object.assign({}, base, extra||{}, {by: BY});
+  PROF_PARAMS = {sku: q.sku, spu: q.spu};
+  const f=document.getElementById('dFrom').value, t=document.getElementById('dTo').value;
+  const qs = new URLSearchParams(Object.assign({}, q, {from:f, to:t}));
+  const r = await fetch('/api/product-profile?'+qs.toString(),{cache:'no-store'});
+  PROF = await r.json();
+  if(PROF.error){ alert(PROF.error); return; }
+  renderProfile();
+}
+function renderProfile(){
+  document.getElementById('profCard').style.display='block';
+  const h = PROF.head, k = PROF.kpi, st = PROF.stock||{};
+  document.getElementById('profRange').textContent = `${PROF.from} ~ ${PROF.to}`;
+  document.getElementById('profHead').innerHTML =
+    `${esc(h.name)}<span class="dim">${h.type==='sku'?'条码 '+esc(h.sku):'SPU'}${h.cat?' ｜ '+esc(h.cat):''}${h.spu&&h.type==='sku'?' ｜ SPU '+esc(h.spu):''}</span>`;
+  const curStock = h.type==='sku' ? st.stock : st.totalStock;
+  const dio = h.type==='sku' ? null : st.dio;
+  const kpis = [
+    ['销售额', fmtWan(k['销售额'])],
+    ['销量', fmtInt(k['销量'])+' 件'],
+    ['件单价', k['件单价']==null?'—':'¥'+fmtInt(k['件单价'])],
+    ['毛利率', pctStr(k['毛利率'])],
+    ['退货率', pctStr(k['退货率'])],
+    ['动销门店数', k['动销门店数']+' 家'],
+    ['当前库存', curStock==null?'—':fmtInt(curStock)+' 件'],
+    ['周转天数', dio==null?'—':dio+' 天'],
+  ];
+  document.getElementById('profKpi').innerHTML = kpis.map(([l,v])=>
+    `<div class="mini"><div class="label">${l}</div><div class="value" style="font-size:16px">${v}</div></div>`).join('');
+  // 导出链接
+  const q = PROF_PARAMS || {};
+  const f=document.getElementById('dFrom').value, t=document.getElementById('dTo').value;
+  document.getElementById('btnExport').href = '/export?table=profile&from='+f+'&to='+t+'&'+
+    (q.sku?('sku='+encodeURIComponent(q.sku)):('spu='+encodeURIComponent(q.spu)));
+  drawTrend();
+  // 月度对比
+  const mo = PROF.monthly;
+  document.querySelector('#monthTable tbody').innerHTML = mo.map((m,i)=>{
+    let mom = '—';
+    if(i>0 && mo[i-1].amount) mom = ((m.amount-mo[i-1].amount)/Math.abs(mo[i-1].amount)*100).toFixed(1)+'%';
+    return `<tr><td>${m.month}</td><td class="num">${fmtInt(m.qty)}</td><td class="num">${fmtWan(m.amount)}</td><td class="num">${mom}</td></tr>`;
+  }).join('');
+  // 门店分布
+  document.querySelector('#storeTable tbody').innerHTML = PROF.stores.map((s,i)=>
+    `<tr><td>${i+1}</td><td>${esc(s.store)}</td><td class="num">${fmtInt(s.qty)}</td><td class="num">${fmtWan(s.amount)}</td></tr>`).join('');
+  // 库存块
+  const chans = st.channels||[];
+  const ctot = chans.reduce((a,c)=>a+c.stock,0)||1;
+  document.getElementById('stockBlock').innerHTML = chans.length ? `
+    <div class="sub-title">库存信息（stocktree）</div>
+    <div style="font-size:12px;color:#a8b8cc;margin-bottom:6px">
+      当前可售库存 <b style="color:#fff">${curStock==null?'—':fmtInt(curStock)}</b> 件
+      ${h.type==='sku'&&st.stores!=null?` ｜ 有货门店 <b style="color:#fff">${st.stores}</b> 家`:''}
+      ${st.sold28!=null?` ｜ 近4周销量 <b style="color:#fff">${fmtInt(st.sold28)}</b> 件`:''}
+      ${dio!=null?` ｜ 周转 <b style="color:#fff">${dio}</b> 天`:''}</div>
+    ${chans.map(c=>`<div class="bar-row"><div class="bl" title="${esc(c.channel)}">${esc(shortChan(c.channel))}</div><div class="bt"><div class="bf" style="width:${Math.min(100,c.stock/ctot*100).toFixed(1)}%"></div></div><div class="bv">${fmtInt(c.stock)} 件</div></div>`).join('')}` : '';
+}
+
+/* 趋势图：柱=销量(左轴) 折线=销售额(右轴) */
+function drawTrend(){
+  const cv = document.getElementById('trendCv');
+  const dpr = window.devicePixelRatio||1;
+  const W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  const ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  const data = PROF.trend||[];
+  if(!data.length){ ctx.fillStyle='#697386'; ctx.font='12px sans-serif'; ctx.fillText('无数据',10,20); return; }
+  const padL=46, padR=56, padT=14, padB=34, cw=W-padL-padR, ch=H-padT-padB;
+  const maxQ = Math.max(1,...data.map(d=>Math.abs(d.qty)));
+  const maxA = Math.max(1,...data.map(d=>Math.abs(d.amount)));
+  ctx.strokeStyle='#dfe3e8'; ctx.fillStyle='#697386'; ctx.font='10px sans-serif';
+  for(let g=0; g<=4; g++){
+    const y = padT + ch*g/4;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    ctx.textAlign='right'; ctx.fillText(Math.round(maxQ*(4-g)/4), padL-6, y+3);
+    ctx.textAlign='left'; ctx.fillText((maxA*(4-g)/4/10000).toFixed(0)+'万', W-padR+6, y+3);
+  }
+  const bw = Math.max(3, cw/data.length*0.55);
+  data.forEach((d,i)=>{
+    const x = padL + cw*(i+0.5)/data.length;
+    const h = Math.abs(d.qty)/maxQ*ch;
+    ctx.fillStyle='#1264a3';
+    ctx.fillRect(x-bw/2, padT+ch-h, bw, h);
+  });
+  ctx.strokeStyle='#d27b0b'; ctx.lineWidth=2; ctx.beginPath();
+  data.forEach((d,i)=>{
+    const x = padL + cw*(i+0.5)/data.length;
+    const y = padT + ch - Math.abs(d.amount)/maxA*ch;
+    i? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+  });
+  ctx.stroke(); ctx.lineWidth=1;
+  ctx.fillStyle='#697386'; ctx.textAlign='center';
+  const step = Math.ceil(data.length/12);
+  data.forEach((d,i)=>{
+    if(i%step) return;
+    const x = padL + cw*(i+0.5)/data.length;
+    let lb = d.label;
+    if(BY==='day') lb = lb.slice(5);
+    ctx.fillText(lb, x, H-padB+14);
+  });
+  ctx.textAlign='left'; ctx.fillStyle='#1264a3'; ctx.fillText('■ 销量(件)', padL, 12);
+  ctx.fillStyle='#d27b0b'; ctx.fillText('— 销售额(万元)', padL+70, 12);
+}
+
+/* ---------- 视图切换（分析模块按需懒加载） ---------- */
+function switchView(v){
+  VIEW=v;
+  document.querySelectorAll('#viewTabs button').forEach(b=>b.classList.toggle('cur', b.dataset.v===v));
+  document.getElementById('view-browse').style.display = v==='browse'?'block':'none';
+  document.getElementById('view-cat').style.display = v==='cat'?'block':'none';
+  document.getElementById('view-store').style.display = v==='store'?'block':'none';
+  if(v==='cat' && !ANA_CAT) loadCatAnalysis();
+  if(v==='store' && !ANA_STORE) loadStoreAnalysis();
+}
+document.querySelectorAll('#viewTabs button').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.v)));
+
+function rateCell(r){
+  if(r==null) return '<td class="num n">—</td>';
+  return `<td class="num ${r<0?'r':'g'}">${r>0?'+':''}${r}%</td>`;
+}
+function openProfile(params){
+  loadProfile(params).then(()=>{
+    if(PROF && !PROF.error) document.getElementById('profCard').scrollIntoView({behavior:'smooth'});
+  });
+}
+
+/* ---------- 品类分析 ---------- */
+async function loadCatAnalysis(){
+  const f=document.getElementById('dFrom').value, t=document.getElementById('dTo').value;
+  const r = await fetch(`/api/cat-analysis?from=${f}&to=${t}&_=${Date.now()}`,{cache:'no-store'});
+  const d = await r.json();
+  if(d.error){ alert(d.error); return; }
+  ANA_CAT = d; ANA_CAT.sel = d.cats.findIndex(c=>c.cat==='手机');
+  if(ANA_CAT.sel<0) ANA_CAT.sel=0;
+  document.getElementById('anaCatTag').textContent = `本期 ${d.from} ~ ${d.to} ｜ 环比上期 ${d.prevFrom} ~ ${d.prevTo}`;
+  renderAnaCats();
+}
+function renderAnaCats(){
+  const d=ANA_CAT;
+  const total = d.cats.reduce((a,c)=>a+Math.max(c.amount,0),0);
+  const W=220,H=190,cx=100,cy=95,R=68,rr=42;
+  let angle=-Math.PI/2, paths='';
+  d.cats.forEach((c,i)=>{
+    if(c.amount<=0||!total) return;
+    const frac=c.amount/total, a2=angle+frac*Math.PI*2, large=frac>0.5?1:0;
+    const x1=cx+R*Math.cos(angle),y1=cy+R*Math.sin(angle),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+    const x3=cx+rr*Math.cos(a2),y3=cy+rr*Math.sin(a2),x4=cx+rr*Math.cos(angle),y4=cy+rr*Math.sin(angle);
+    paths+=`<path d="M${x1},${y1} A${R},${R} 0 ${large} 1 ${x2},${y2} L${x3},${y3} A${rr},${rr} 0 ${large} 0 ${x4},${y4}Z" fill="${PALETTE[i%PALETTE.length]}"/>`;
+    angle=a2;
+  });
+  const top = d.cats.reduce((m,c)=>c.amount>((m&&m.amount)||0)?c:m, null);
+  document.getElementById('anaDonut').innerHTML = total
+    ? `<svg viewBox="0 0 ${W} ${H}" style="width:220px;height:190px">${paths}<text x="${cx}" y="${cy-4}" fill="#7d8ca3" font-size="10" text-anchor="middle">${esc(top?top.cat:'')}</text><text x="${cx}" y="${cy+14}" fill="#fff" font-size="15" font-weight="700" text-anchor="middle">${top?(top.amount/total*100).toFixed(1)+'%':''}</text></svg>`
+    : '<div class="hint">本期无销售</div>';
+  document.getElementById('anaLegend').innerHTML = total ? d.cats.map((c,i)=>
+    c.amount>0?`<span class="lg"><i style="background:${PALETTE[i%PALETTE.length]}"></i>${esc(c.cat)} ${(c.amount/total*100).toFixed(1)}%</span>`:'').join('') : '';
+  document.querySelector('#anaCatTable tbody').innerHTML = d.cats.map((c,i)=>
+    `<tr class="rowlink ${i===d.sel?'sel':''}" data-i="${i}"><td>${esc(c.cat)}</td><td class="num">${fmtWan(c.amount)}</td><td class="num">${fmtInt(c.qty)}</td><td class="num">${c.share}%</td>${rateCell(c.rate)}</tr>`).join('');
+  document.querySelectorAll('#anaCatTable tbody tr').forEach(tr=>tr.addEventListener('click',()=>{ ANA_CAT.sel=+tr.dataset.i; renderAnaCats(); }));
+  document.getElementById('anaCatTabs').innerHTML = d.cats.map((c,i)=>
+    `<button data-i="${i}" class="${i===d.sel?'cur':''}">${esc(c.cat)}</button>`).join('');
+  document.querySelectorAll('#anaCatTabs button').forEach(b=>b.addEventListener('click',()=>{ ANA_CAT.sel=+b.dataset.i; renderAnaCats(); }));
+  renderAnaSpus();
+}
+function renderAnaSpus(){
+  const d=ANA_CAT, c=d.cats[d.sel];
+  const list = ((d.spus||{})[c.cat]||[]).slice(0,20);
+  const tb = document.querySelector('#anaSpuTable tbody');
+  if(!list.length){ tb.innerHTML='<tr><td colspan="7">本期该大类无销售</td></tr>'; return; }
+  tb.innerHTML = list.map((p,i)=>
+    `<tr class="rowlink" data-spu="${esc(p.spu)}"><td>${i+1}</td><td class="pname">${esc(p.spu)}</td><td class="num">${fmtWan(p.amount)}</td><td class="num">${fmtInt(p.qty)}</td><td class="num">${p.share}%</td>${rateCell(p.rate)}<td class="num"><a href="javascript:;" class="drill-link" data-spu="${esc(p.spu)}" style="color:#60a5fa;text-decoration:none">▶ SKU</a></td></tr><tr class="drill-sub" style="display:none"><td colspan="7"></td></tr>`).join('');
+  tb.querySelectorAll('tr.rowlink').forEach(tr=>tr.addEventListener('click',(e)=>{
+    if(e.target.classList.contains('drill-link')) return;
+    openProfile({spu: tr.dataset.spu});
+  }));
+  tb.querySelectorAll('.drill-link').forEach(a=>a.addEventListener('click',()=>{
+    const sub = a.closest('tr').nextElementSibling;
+    if(sub.style.display!=='none'){ sub.style.display='none'; a.textContent='▶ SKU'; return; }
+    let found=null;
+    (TREE?TREE.cats:[]).forEach(cc=>cc.spus.forEach(pp=>{ if(pp.spu===a.dataset.spu) found=pp; }));
+    sub.firstElementChild.innerHTML = found
+      ? '<table style="min-width:0"><thead><tr><th>#</th><th>商品名称</th><th class="num">销售额</th><th class="num">销量</th><th class="num">占比</th></tr></thead><tbody>'+
+        found.skus.map((s,i)=>`<tr class="rowlink sku-drill" data-sku="${esc(s.sku)}"><td>${i+1}</td><td class="pname">${esc(s.name)}</td><td class="num">${fmtWan(s.amount)}</td><td class="num">${fmtInt(s.qty)}</td><td class="num">${found.amount?(s.amount/found.amount*100).toFixed(1):'—'}%</td></tr>`).join('')+
+        '</tbody></table>'
+      : '<span class="hint">浏览树中暂无该 SPU 明细（请先在当前周期点"查询"）</span>';
+    sub.style.display='table-row'; a.textContent='▼ SKU';
+    sub.querySelectorAll('.sku-drill').forEach(tr=>tr.addEventListener('click',()=>openProfile({sku: tr.dataset.sku})));
+  }));
+}
+
+/* ---------- 门店分析 ---------- */
+async function loadStoreAnalysis(){
+  const f=document.getElementById('dFrom').value, t=document.getElementById('dTo').value;
+  const r = await fetch(`/api/store-analysis?from=${f}&to=${t}&_=${Date.now()}`,{cache:'no-store'});
+  const d = await r.json();
+  if(d.error){ alert(d.error); return; }
+  ANA_STORE = d;
+  document.getElementById('btnMatrixExp').href = `/export?table=storematrix&from=${f}&to=${t}`;
+  renderStoreRank(); renderMatrix();
+}
+function renderStoreRank(){
+  const tb=document.querySelector('#storeRankTable tbody');
+  tb.innerHTML = ANA_STORE.stores.map((s,i)=>
+    `<tr class="rowlink" data-s="${esc(s.store)}"><td>${i+1}</td><td>${esc(s.store)}</td><td class="num">${fmtWan(s.amount)}</td><td class="num">${fmtInt(s.qty)}</td>${rateCell(s.rate)}</tr>`).join('');
+  tb.querySelectorAll('tr').forEach(tr=>tr.addEventListener('click',()=>{
+    tb.querySelectorAll('tr').forEach(x=>x.classList.remove('sel'));
+    tr.classList.add('sel');
+    loadStoreDrill(tr.dataset.s);
+  }));
+}
+async function loadStoreDrill(store){
+  document.getElementById('storeDrillTitle').textContent = store + ' · 大类→SPU';
+  const box=document.getElementById('storeDrill');
+  box.innerHTML='<div class="hint">加载中…</div>';
+  const f=document.getElementById('dFrom').value, t=document.getElementById('dTo').value;
+  const r = await fetch(`/api/store-analysis?from=${f}&to=${t}&store=${encodeURIComponent(store)}&_=${Date.now()}`,{cache:'no-store'});
+  const d = await r.json();
+  if(d.error){ box.innerHTML='<div class="hint">'+esc(d.error)+'</div>'; return; }
+  if(!d.cats.length){ box.innerHTML='<div class="hint">本期无销售</div>'; return; }
+  box.innerHTML = d.cats.map((c,ci)=>`
+    <div class="drill-cat${ci===0?' open':''}">
+      <div class="dc-h"><span>${esc(c.cat)} ｜ ${fmtWan(c.amount)} ｜ ${fmtInt(c.qty)} 件</span><span>▾</span></div>
+      <div class="dc-b"><table style="min-width:0"><thead><tr><th>#</th><th>SPU</th><th class="num">销售额</th><th class="num">销量</th></tr></thead>
+      <tbody>${c.spus.slice(0,50).map((p,i)=>`<tr class="rowlink spu-drill" data-spu="${esc(p.spu)}"><td>${i+1}</td><td class="pname">${esc(p.spu)}</td><td class="num">${fmtWan(p.amount)}</td><td class="num">${fmtInt(p.qty)}</td></tr>`).join('')}</tbody></table></div>
+    </div>`).join('');
+  box.querySelectorAll('.dc-h').forEach(h=>h.addEventListener('click',()=>h.parentElement.classList.toggle('open')));
+  box.querySelectorAll('.spu-drill').forEach(tr=>tr.addEventListener('click',()=>openProfile({spu: tr.dataset.spu})));
+}
+function renderMatrix(){
+  const m=ANA_STORE.matrix, cats=ANA_STORE.cats;
+  const rows = m.stores.map((s,i)=>({s, v:m.v[i], tot:m.v[i].reduce((a,b)=>a+b,0)}));
+  const ci=MAT_SORT.col;
+  if(ci>=-1 && ci!==-2){
+    rows.sort((a,b)=>{
+      const av = ci<0?a.tot:a.v[ci], bv = ci<0?b.tot:b.v[ci];
+      return MAT_SORT.asc ? av-bv : bv-av;
+    });
+  }
+  const arrow = j=> MAT_SORT.col===j ? (MAT_SORT.asc?' ▲':' ▼') : '';
+  document.querySelector('#matrixTable thead').innerHTML = '<tr><th class="sortable" data-c="-2">门店</th>'+
+    cats.map((c,j)=>`<th class="num sortable" data-c="${j}">${esc(c)}${arrow(j)}</th>`).join('')+
+    `<th class="num sortable" data-c="-1">合计${arrow(-1)}</th></tr>`;
+  document.querySelector('#matrixTable tbody').innerHTML = rows.map(r=>
+    `<tr><td>${esc(r.s)}</td>${r.v.map(x=>`<td class="num">${x?(x/10000).toLocaleString('zh-CN',{maximumFractionDigits:1}):'-'}</td>`).join('')}<td class="num"><b>${(r.tot/10000).toLocaleString('zh-CN',{maximumFractionDigits:1})}</b></td></tr>`).join('');
+  document.querySelectorAll('#matrixTable th.sortable').forEach(th=>th.addEventListener('click',()=>{
+    const c=+th.dataset.c;
+    if(c===-2){ MAT_SORT={col:-2,asc:true}; }
+    else if(MAT_SORT.col===c){ MAT_SORT.asc=!MAT_SORT.asc; }
+    else { MAT_SORT={col:c,asc:false}; }
+    renderMatrix();
+  }));
+}
+
+document.querySelectorAll('#granBar button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#granBar button').forEach(x=>x.classList.remove('cur'));
+  b.classList.add('cur');
+  BY = b.dataset.by;
+  if(CUR_SPU!=null) loadProfile();
+}));
+document.getElementById('btnQuery').addEventListener('click', ()=>{
+  document.getElementById('profCard').style.display='none';
+  ANA_CAT=null; ANA_STORE=null;   // 周期变化后分析缓存失效，按需重取
+  loadTree();
+  if(VIEW==='cat') loadCatAnalysis();
+  if(VIEW==='store') loadStoreAnalysis();
+});
+window.addEventListener('resize', ()=>{ if(PROF && !PROF.error) drawTrend(); });
+
+/* 自动获取数据总开关 */
+async function initAutoRefresh(){
+  const cb = document.getElementById('autoRefresh');
+  const hint = document.getElementById('arHint');
+  if(!cb) return;
+  const sync = ()=>hint.classList.toggle('show', !cb.checked);
+  try{
+    const r = await fetch('/api/auto-refresh', {cache:'no-store'});
+    if(r.ok){ const d = await r.json(); cb.checked = !!d.enabled; }
+  }catch(e){}
+  sync();
+  cb.addEventListener('change', async ()=>{
+    const want = cb.checked;
+    try{
+      const r = await fetch('/api/auto-refresh', {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({enabled:want})});
+      const d = await r.json();
+      if(!r.ok || !d.ok) throw new Error(d.error || ('HTTP '+r.status));
+      cb.checked = !!d.enabled;
+    }catch(e){
+      cb.checked = !want;
+      alert('设置失败：'+e.message);
+    }
+    sync();
+  });
+}
+initAutoRefresh();
+document.getElementById('dFrom').value = monthStart();
+document.getElementById('dTo').value = todayStr();
+loadTree();
+/* 同行高亮: 点击锁定(事件委托; 只加样式不拦截现有行点击; 排序/翻页/加载更多重渲染后自动失效) */
+document.addEventListener('click', e=>{
+  const tr = e.target.closest('tbody tr');
+  if(!tr) return;
+  const was = tr.classList.contains('hl');
+  tr.parentElement.querySelectorAll('tr.hl').forEach(r=>r.classList.remove('hl'));
+  if(!was) tr.classList.add('hl');
+});
+</script>
+</body>
+</html>

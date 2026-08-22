@@ -1,0 +1,359 @@
+{
+  "月份": "2026-07",
+  "门店": [
+    {
+      "name": "牡丹园翠微",
+      "fullName": "华为北京牡丹园翠微",
+      "region": "销售一区",
+      "salesTarget": 3878056.86134978,
+      "grossTarget": 594635.3854069663,
+      "carrierTarget": 23.07692307692308,
+      "accTarget": 25200.0
+    },
+    {
+      "name": "东坝万达",
+      "fullName": "华为北京东坝万达",
+      "region": "销售一区",
+      "salesTarget": 4052022.855438416,
+      "grossTarget": 621310.171167224,
+      "carrierTarget": 26.37362637362637,
+      "accTarget": 22350.0
+    },
+    {
+      "name": "西铁营万达",
+      "fullName": "华为北京西铁营万达",
+      "region": "销售一区",
+      "salesTarget": 2449940.551869365,
+      "grossTarget": 375657.5512866362,
+      "carrierTarget": 14.83516483516483,
+      "accTarget": 15000.0
+    },
+    {
+      "name": "平谷万达",
+      "fullName": "华为北京平谷万达",
+      "region": "销售一区",
+      "salesTarget": 1805656.980946921,
+      "grossTarget": 276867.4037451945,
+      "carrierTarget": 6.593406593406593,
+      "accTarget": 9525.0
+    },
+    {
+      "name": "北苑龙湖",
+      "fullName": "华为北京北苑龙湖",
+      "region": "销售一区",
+      "salesTarget": 1474494.984382548,
+      "grossTarget": 226089.2309386574,
+      "carrierTarget": 8.241758241758241,
+      "accTarget": 9075.0
+    },
+    {
+      "name": "回龙观华联",
+      "fullName": "华为北京回龙观华联",
+      "region": "销售一区",
+      "salesTarget": 1397811.820549107,
+      "grossTarget": 214331.1458175298,
+      "carrierTarget": 6.593406593406593,
+      "accTarget": 8925.0
+    },
+    {
+      "name": "回龙观万科",
+      "fullName": "华为北京回龙观万科",
+      "region": "销售一区",
+      "salesTarget": 1044258.824241763,
+      "grossTarget": 160119.686383737,
+      "carrierTarget": 6.0,
+      "accTarget": 7050.0
+    },
+    {
+      "name": "东坝金隅",
+      "fullName": "华为北京东坝金隅",
+      "region": "销售一区",
+      "salesTarget": 944676.58345429,
+      "grossTarget": 144850.4094629911,
+      "carrierTarget": 5.769230769230769,
+      "accTarget": 5400.0
+    },
+    {
+      "name": "昌平政府街",
+      "fullName": "华为北京昌平政府街",
+      "region": "销售一区",
+      "salesTarget": 736175.8720733458,
+      "grossTarget": 112880.3003845797,
+      "carrierTarget": 2.0,
+      "accTarget": 4575.0
+    },
+    {
+      "name": "京投小站",
+      "fullName": "华为北京京投小站",
+      "region": "销售一区",
+      "salesTarget": 397467.4406136621,
+      "grossTarget": 60945.00756076152,
+      "carrierTarget": 0.8241758241758241,
+      "accTarget": 2775.0
+    },
+    {
+      "name": "石景山万达",
+      "fullName": "华为北京石景山万达",
+      "region": "销售二区",
+      "salesTarget": 3762831.074623198,
+      "grossTarget": 576967.4314422237,
+      "carrierTarget": 28.02197802197802,
+      "accTarget": 23700.0
+    },
+    {
+      "name": "门头沟长安天街",
+      "fullName": "华为北京门头沟长安天街",
+      "region": "销售二区",
+      "salesTarget": 2441712.922121855,
+      "grossTarget": 374395.9813920179,
+      "carrierTarget": 9.89010989010989,
+      "accTarget": 15900.0
+    },
+    {
+      "name": "槐房万达",
+      "fullName": "华为北京槐房万达",
+      "region": "销售二区",
+      "salesTarget": 2377005.602495831,
+      "grossTarget": 364474.1923826941,
+      "carrierTarget": 13.18681318681319,
+      "accTarget": 14625.0
+    },
+    {
+      "name": "怀柔万达",
+      "fullName": "华为北京怀柔万达",
+      "region": "销售二区",
+      "salesTarget": 2106099.736877915,
+      "grossTarget": 322935.292987947,
+      "carrierTarget": 8.241758241758241,
+      "accTarget": 12900.0
+    },
+    {
+      "name": "丰台银泰",
+      "fullName": "华为北京丰台银泰",
+      "region": "销售二区",
+      "salesTarget": 1873018.702935472,
+      "grossTarget": 287196.2011167725,
+      "carrierTarget": 10.71428571428571,
+      "accTarget": 11250.0
+    },
+    {
+      "name": "房山万科",
+      "fullName": "华为北京房山万科",
+      "region": "销售二区",
+      "salesTarget": 1552972.557169953,
+      "grossTarget": 238122.4587660595,
+      "carrierTarget": 8.241758241758241,
+      "accTarget": 11550.0
+    },
+    {
+      "name": "丰台鑫嘉汇",
+      "fullName": "华为北京丰台鑫嘉汇",
+      "region": "销售二区",
+      "salesTarget": 940438.2628570471,
+      "grossTarget": 144200.5336380806,
+      "carrierTarget": 5.0,
+      "accTarget": 6600.0
+    },
+    {
+      "name": "上德银泰",
+      "fullName": "华为北京上德银泰",
+      "region": "销售二区",
+      "salesTarget": 778194.6030040685,
+      "grossTarget": 119323.1724606238,
+      "carrierTarget": 6.0,
+      "accTarget": 7050.0
+    },
+    {
+      "name": "房山燕隆汇",
+      "fullName": "华为北京房山燕隆汇",
+      "region": "销售二区",
+      "salesTarget": 516397.8062439576,
+      "grossTarget": 79180.99695740685,
+      "carrierTarget": 2.0,
+      "accTarget": 3450.0
+    },
+    {
+      "name": "回龙观一店",
+      "fullName": "华为北京回龙观一店",
+      "region": "销售二区",
+      "salesTarget": 453101.4668292816,
+      "grossTarget": 69475.55824715653,
+      "carrierTarget": 2.472527472527473,
+      "accTarget": 3450.0
+    },
+    {
+      "name": "大兴大族",
+      "fullName": "华为北京大兴大族",
+      "region": "销售三区",
+      "salesTarget": 4114107.858323895,
+      "grossTarget": 630829.871609664,
+      "carrierTarget": 28.02197802197802,
+      "accTarget": 23175.0
+    },
+    {
+      "name": "旧宫万科",
+      "fullName": "华为北京旧宫万科",
+      "region": "销售三区",
+      "salesTarget": 2961407.584594564,
+      "grossTarget": 454082.4963045,
+      "carrierTarget": 28.02197802197802,
+      "accTarget": 19500.0
+    },
+    {
+      "name": "来福士",
+      "fullName": "华为北京来福士",
+      "region": "销售三区",
+      "salesTarget": 3079112.380686079,
+      "grossTarget": 472130.5650385322,
+      "carrierTarget": 15.0,
+      "accTarget": 19200.0
+    },
+    {
+      "name": "延庆万达",
+      "fullName": "华为北京延庆万达",
+      "region": "销售三区",
+      "salesTarget": 2184914.279575808,
+      "grossTarget": 335020.1895349573,
+      "carrierTarget": 8.241758241758241,
+      "accTarget": 14025.0
+    },
+    {
+      "name": "通州乐堤港",
+      "fullName": "华为北京通州乐堤港",
+      "region": "销售三区",
+      "salesTarget": 1531120.360922034,
+      "grossTarget": 234771.7886747119,
+      "carrierTarget": 6.0,
+      "accTarget": 8790.0
+    },
+    {
+      "name": "汇琴广场",
+      "fullName": "华为北京汇琴广场",
+      "region": "销售三区",
+      "salesTarget": 1067887.143982905,
+      "grossTarget": 163742.6954107121,
+      "carrierTarget": 4.945054945054945,
+      "accTarget": 7650.0
+    },
+    {
+      "name": "沙河万达",
+      "fullName": "华为北京沙河万达",
+      "region": "销售三区",
+      "salesTarget": 1280926.437258982,
+      "grossTarget": 196408.7203797105,
+      "carrierTarget": 6.593406593406593,
+      "accTarget": 8400.0
+    },
+    {
+      "name": "同成街华联",
+      "fullName": "华为北京同成街华联",
+      "region": "销售三区",
+      "salesTarget": 996490.6462435538,
+      "grossTarget": 152795.2324240116,
+      "carrierTarget": 4.12087912087912,
+      "accTarget": 5400.0
+    },
+    {
+      "name": "方庄新城",
+      "fullName": "华为北京方庄新城",
+      "region": "销售三区",
+      "salesTarget": 801697.7983344124,
+      "grossTarget": 122926.9957446099,
+      "carrierTarget": 4.945054945054945,
+      "accTarget": 5325.0
+    },
+    {
+      "name": "丰管路用户中心",
+      "fullName": "华为北京丰管路用户中心",
+      "region": "销售三区",
+      "salesTarget": null,
+      "grossTarget": null,
+      "carrierTarget": null,
+      "accTarget": null
+    },
+    {
+      "name": "通州万达",
+      "fullName": "华为北京通州万达",
+      "region": "MSC",
+      "salesTarget": 8692000.0,
+      "grossTarget": 1332773.333333333,
+      "carrierTarget": 40.0,
+      "accTarget": 46125.0
+    },
+    {
+      "name": "丰科万达",
+      "fullName": "华为北京丰科万达",
+      "region": "MSC",
+      "salesTarget": 8692000.0,
+      "grossTarget": 1332773.333333333,
+      "carrierTarget": 40.0,
+      "accTarget": 47850.0
+    },
+    {
+      "name": "清河万象汇",
+      "fullName": "华为北京清河万象汇",
+      "region": "MSC",
+      "salesTarget": 5618000.0,
+      "grossTarget": 861426.6666666667,
+      "carrierTarget": 26.0,
+      "accTarget": 32175.0
+    },
+    {
+      "name": "首开万象汇",
+      "fullName": "华为北京首开万象汇",
+      "region": "MSC",
+      "salesTarget": 6148000.0,
+      "grossTarget": 942693.3333333336,
+      "carrierTarget": 26.0,
+      "accTarget": 30825.0
+    },
+    {
+      "name": "亦庄龙湖",
+      "fullName": "华为北京亦庄龙湖",
+      "region": "MSC",
+      "salesTarget": 6784000.0,
+      "grossTarget": 1040213.333333333,
+      "carrierTarget": 30.0,
+      "accTarget": 36675.0
+    },
+    {
+      "name": "丽泽龙湖",
+      "fullName": "华为北京丽泽龙湖",
+      "region": "MSC",
+      "salesTarget": 4982000.0,
+      "grossTarget": 763906.6666666666,
+      "carrierTarget": 21.0,
+      "accTarget": 23850.0
+    },
+    {
+      "name": "酒仙桥颐堤港",
+      "fullName": "华为北京酒仙桥颐堤港",
+      "region": "MSC",
+      "salesTarget": 4982000.0,
+      "grossTarget": 763906.6666666666,
+      "carrierTarget": 18.0,
+      "accTarget": 22500.0
+    },
+    {
+      "name": "常营龙湖",
+      "fullName": "华为北京长楹龙湖",
+      "region": "MSC",
+      "salesTarget": 7102000.0,
+      "grossTarget": 1088973.333333333,
+      "carrierTarget": 28.0,
+      "accTarget": 28185.0
+    }
+  ],
+  "TTL": {
+    "salesTarget": 106000000.0,
+    "grossTarget": 16253333.333333336
+  },
+  "unmatched": [],
+  "提取时间": "2026-07-20 19:15",
+  "来源文件": "20260720191539_targets_2026年-7月（销售分析）.xlsx",
+  "说明": {
+    "毛利目标": "DAY版日目标按 毛利日目标/销售日目标×月销售目标 换算为月度",
+    "运营商/三方配件目标": "取自月度销售达成率版(月度口径)"
+  },
+  "手工导入时间": "2026-07-21 09:14"
+}
