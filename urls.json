@@ -1,9 +1,9 @@
 {
-  "updated": "2026-08-24 17:30",
+  "updated": "2026-08-24 17:36",
   "links": [
     {
       "name": "线路一（推荐·当前离线）",
-      "url": "https://producing-golden-able-mae.trycloudflare.com",
+      "url": "https://api.trycloudflare.com",
       "primary": false
     },
     {
