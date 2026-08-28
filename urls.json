@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-28 12:35",
+  "updated": "2026-08-28 12:45",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://web-ongoing-cent-mod.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://five-smithsonian-professional-progressive.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
