@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-28 12:00",
+  "updated": "2026-08-28 12:05",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://librarian-name-endangered-worthy.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://males-trade-oaks-attractions.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
