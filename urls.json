@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-31 04:35",
+  "updated": "2026-08-31 04:45",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://baby-leads-inside-cdt.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://speakers-bacon-identifies-maine.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
