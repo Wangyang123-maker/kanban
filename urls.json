@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-31 03:32",
+  "updated": "2026-08-31 03:40",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://bronze-calvin-ceiling-hence.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://adjustments-integer-orleans-duo.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
