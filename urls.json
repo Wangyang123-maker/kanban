@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-31 07:10",
+  "updated": "2026-08-31 07:15",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://finest-opportunities-tradition-purpose.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://flying-structured-votes-ntsc.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
