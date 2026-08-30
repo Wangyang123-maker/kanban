@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-31 03:15",
+  "updated": "2026-08-31 03:25",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://mailto-preceding-red-discrimination.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://software-parker-closing-jason.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
