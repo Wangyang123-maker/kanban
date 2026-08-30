@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-31 03:55",
+  "updated": "2026-08-31 04:00",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://parameter-taught-construction-compute.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://robin-strip-programs-auckland.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
