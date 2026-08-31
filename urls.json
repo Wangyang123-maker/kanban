@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-31 08:50",
+  "updated": "2026-08-31 09:00",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://ave-youth-saint-church.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://argument-budapest-time-possibilities.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
