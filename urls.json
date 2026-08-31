@@ -1,15 +1,15 @@
 {
-  "updated": "2026-08-31 10:15",
+  "updated": "2026-08-31 10:20",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://wake-tires-avenue-loud.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://terms-recovery-psp-del.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
