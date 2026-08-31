@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-01 04:32",
+  "updated": "2026-09-01 05:00",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://explore-reviewing-accept-advertisers.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://purple-prints-paid-com.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
