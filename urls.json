@@ -1,13 +1,13 @@
 {
-  "updated": "2026-09-01 10:32",
+  "updated": "2026-09-01 13:18",
   "links": [
     {
-      "name": "线路一（推荐）",
+      "name": "线路一（推荐·当前离线）",
       "url": "https://ideal-terrace-palace-composition.trycloudflare.com",
-      "primary": true
+      "primary": false
     },
     {
-      "name": "线路二（固定备用）",
+      "name": "线路二（固定备用·当前离线）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
       "primary": false
     }
