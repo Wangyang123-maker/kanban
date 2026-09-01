@@ -2,12 +2,12 @@
   "updated": "2026-09-01 13:18",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://ideal-terrace-palace-composition.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://spears-exams-record-dried.trycloudflare.com",
+      "primary": true
     },
     {
-      "name": "线路二（固定备用·当前离线）",
+      "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
       "primary": false
     }
