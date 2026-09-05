@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-06 03:32",
+  "updated": "2026-09-06 04:00",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://waves-scientific-harper-agreements.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://attach-prizes-ala-efforts.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用·当前离线）",
