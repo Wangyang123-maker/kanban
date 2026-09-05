@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-06 05:05",
+  "updated": "2026-09-06 05:15",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://rna-keen-resistant-wet.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://eggs-terrace-looked-los.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用·当前离线）",
