@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-06 05:45",
+  "updated": "2026-09-06 05:55",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://story-cow-joel-displayed.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://tender-stating-illustrations-ricky.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用·当前离线）",
