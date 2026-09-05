@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-06 05:32",
+  "updated": "2026-09-06 05:35",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://benjamin-lbs-modular-baseball.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://mechanical-tab-enhance-valley.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用·当前离线）",
