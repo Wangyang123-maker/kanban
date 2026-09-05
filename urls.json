@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-06 06:50",
+  "updated": "2026-09-06 06:55",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://papers-composed-charger-medline.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://may-exclude-dec-career.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用·当前离线）",
