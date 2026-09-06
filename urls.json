@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-06 10:45",
+  "updated": "2026-09-06 10:50",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://day-labeled-medicines-strength.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://common-pros-biodiversity-plans.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用·当前离线）",
