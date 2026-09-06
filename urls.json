@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-06 10:25",
+  "updated": "2026-09-06 10:32",
   "links": [
     {
-      "name": "线路一（推荐）",
+      "name": "线路一（推荐·当前离线）",
       "url": "https://thru-genes-released-theology.trycloudflare.com",
-      "primary": true
+      "primary": false
     },
     {
       "name": "线路二（固定备用·当前离线）",
