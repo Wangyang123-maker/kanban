@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-09 13:55",
+  "updated": "2026-09-09 14:05",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://protect-fairly-modifications-marvel.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://brother-frozen-gone-briefing.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
