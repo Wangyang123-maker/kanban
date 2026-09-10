@@ -1,9 +1,9 @@
 {
-  "updated": "2026-09-10 20:20",
+  "updated": "2026-09-10 20:25",
   "links": [
     {
       "name": "线路一（推荐·当前离线）",
-      "url": "https://ultimately-oklahoma-wal-utah.trycloudflare.com",
+      "url": "https://api.trycloudflare.com",
       "primary": false
     },
     {
