@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-10 11:50",
+  "updated": "2026-09-10 12:00",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://hamilton-monica-concrete-clothes.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://refer-duration-pink-camps.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
