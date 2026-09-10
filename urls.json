@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-10 18:00",
+  "updated": "2026-09-10 18:10",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://extension-hans-salmon-groove.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://openings-limitation-secondary-permitted.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
