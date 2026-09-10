@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-10 18:15",
+  "updated": "2026-09-10 18:20",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://positions-quarterly-rotation-opposed.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://thee-aye-mills-eur.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
