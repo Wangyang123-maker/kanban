@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-14 17:40",
+  "updated": "2026-09-14 17:50",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://slow-certification-disclaimers-finest.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://spray-goto-referred-using.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
