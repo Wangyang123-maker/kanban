@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-14 15:14",
+  "updated": "2026-09-14 15:20",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://instructors-filing-treat-removal.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://thou-clear-ultram-philips.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
