@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-16 00:32",
+  "updated": "2026-09-16 00:35",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://diff-webcast-spyware-medal.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://consumption-tribes-parenting-absorption.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
