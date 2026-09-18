@@ -1,9 +1,9 @@
 {
-  "updated": "2026-09-18 15:10",
+  "updated": "2026-09-18 15:17",
   "links": [
     {
       "name": "线路一（推荐·当前离线）",
-      "url": "https://animation-cassette-feeding-conferencing.trycloudflare.com",
+      "url": "https://api.trycloudflare.com",
       "primary": false
     },
     {
