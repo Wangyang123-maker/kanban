@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-23 10:32",
+  "updated": "2026-09-23 10:40",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://transaction-transit-participated-tapes.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://putting-acc-directions-gospel.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
