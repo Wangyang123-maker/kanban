@@ -1,15 +1,15 @@
 {
-  "updated": "2026-09-24 12:00",
+  "updated": "2026-09-24 12:05",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://vacancies-cgi-drive-attending.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://environmental-subjects-album-manitoba.trycloudflare.com",
+      "primary": true
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": true
+      "primary": false
     }
   ]
 }
