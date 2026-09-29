@@ -2,12 +2,12 @@
   "updated": "2026-09-29 09:05",
   "links": [
     {
-      "name": "线路一（推荐·当前离线）",
-      "url": "https://driver-bow-firmware-perfume.trycloudflare.com",
-      "primary": false
+      "name": "线路一（推荐）",
+      "url": "https://lynn-jennifer-agreements-tires.trycloudflare.com",
+      "primary": true
     },
     {
-      "name": "线路二（固定备用·当前离线）",
+      "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
       "primary": false
     }
