@@ -1,15 +1,15 @@
 {
-  "updated": "2026-10-02 15:32",
+  "updated": "2026-10-02 16:11",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://dis-air-creativity-themes.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://proteins-develop-smooth-patricia.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
