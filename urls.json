@@ -1,15 +1,15 @@
 {
-  "updated": "2026-10-08 18:32",
+  "updated": "2026-10-09 13:30",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://involvement-white-lawsuit-aged.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://offset-vid-appropriate-getting.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
