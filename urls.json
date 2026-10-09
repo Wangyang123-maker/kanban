@@ -1,15 +1,15 @@
 {
-  "updated": "2026-10-09 15:35",
+  "updated": "2026-10-09 15:36",
   "links": [
     {
-      "name": "线路一（推荐）",
-      "url": "https://refined-ecology-definitely-racing.trycloudflare.com",
-      "primary": true
+      "name": "线路一（推荐·当前离线）",
+      "url": "https://hockey-married-stuff-opposite.trycloudflare.com",
+      "primary": false
     },
     {
       "name": "线路二（固定备用）",
       "url": "https://desktop-u7g6a00.tail01363f.ts.net",
-      "primary": false
+      "primary": true
     }
   ]
 }
